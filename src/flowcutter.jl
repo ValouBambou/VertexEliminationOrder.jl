@@ -1,4 +1,4 @@
-struct Cell
+@with_kw struct Cell
     boundary::Set{Int64}
     interior::Set{Int64}
     size::Int64 = length(boundary) + length(interior)
@@ -27,6 +27,8 @@ julia> nested_dissection(G)
 ```
 """
 function nested_dissection(g::SimpleGraph{Int64})
+    max_bag_size = 0
+
     cell = Cell(boundary = Set([]), interior = vertices(g))
     while true
         # get a separator to split the cell using flow cutter algorithm

@@ -1,9 +1,11 @@
 module VertexEliminationOrder
 
 using LightGraphs
+using Parameters
+
 
 include("heuristics.jl")
-export minfill!
-export minwidth!
+export minfill!, minwidth!
+ 
 
 end
