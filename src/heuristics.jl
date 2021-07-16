@@ -85,7 +85,6 @@ function minfill!(g::SimpleGraph{Int64})
         # keep track of index with the future remove
         max_index = nvertices + 1 - i
         if toremove < max_index
-            labels[max_index] = toremove
             labels[toremove] = max_index
         end
 
@@ -127,13 +126,12 @@ function minwidth!(g::SimpleGraph{Int64})
     treewidth = 0
     for i = 1:nvertices
         # find the vertex whith the minimum degree
-        toremove = argmin(map(v -> degree(g, v), vertices(g)))
+        toremove = argmin(degree(g))
         order[i] = labels[toremove]
 
         # keep track of index with the future remove
         max_index = nvertices + 1 - i
         if toremove < max_index
-            labels[max_index] = toremove
             labels[toremove] = max_index
         end
 

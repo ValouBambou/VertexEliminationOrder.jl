@@ -5,7 +5,7 @@
 end
 
 
-function split_cell(c::Cell)
+function split_cell(c::Cell)::Cell
     # get a separator to split the cell using flow cutter algorithm
     nothing
 end
@@ -32,8 +32,9 @@ julia> nested_dissection(G)
 ```
 """
 function nested_dissection(g::SimpleGraph{Int64})
+    # init cells sets
     open_cells = PriorityQueue{Cell, Int64}(Base.Order.Reverse)
-    enqueue!(open_cells, Cell(boundary = Set([]), interior = vertices(g)), 0)
+    enqueue!(open_cells, Cell(boundary = Set([]), interior = vertices(g)), nv(g))
     finals_cells::Set{Cell} = Set()
     max_bag_size_finals = 0
 
