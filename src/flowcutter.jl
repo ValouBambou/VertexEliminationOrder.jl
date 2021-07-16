@@ -20,8 +20,8 @@ an order for elimination using the nested dissection and the flow cutter algorit
 - `g::SimpleGraph{Int64}`: the graph to analyse.
 
 # Return
-- result::`Int64`  of the approximation.
 - ordering::`Vector{Int64}` an array of vertices index.
+- result::`Int64`  of the approximation.
 
 # Examples
 ```jlrepl
