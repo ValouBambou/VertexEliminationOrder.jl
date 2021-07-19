@@ -4,7 +4,18 @@
     bag_size::Int64 = length(boundary) + length(interior)
 end
 
+"""
+    split_cell(c)
+Computes a separator using flow cutter algorithm and return one final cell and
+multiple open cells for nested recursion.
 
+# Arguments
+- `c::Cell` the cell (part of a graph) to split
+
+# Return
+- `cf::Cell` the final cell from separator
+- `co::Vector{Cell}` the rest of open cells from the separation
+"""
 function split_cell(c::Cell)
     # get a separator to split the cell using flow cutter algorithm
     nothing
@@ -60,8 +71,8 @@ function nested_dissection(g::SimpleGraph{Int64})
         map(
             cell -> vcat(cell.interior, cell.boundary),
             vcat(collect(keys(open_cells)), reverse(finals_cells))
-            )...        
+            )...
     )
 
-    return (,
+    return (order, treewidth)
 end
