@@ -13,7 +13,7 @@ those in the set.
 - `reverse::Bool` if true it does backward growing.
 
 # Return
-- nothing (only set is modified)
+- `nothing` (only set is modified)
 """
 function forward_growing!(set, g, flow_matrix, capacity_matrix, reverse::Bool=false)
     # in case of backward growing we swap the flow
@@ -39,13 +39,14 @@ end
 
 
 function flowcutter(g::SimpleGraph, s::Int64, t::Int64)
+	n = nv(g)
     flow_matrix = zeros(n, n)
 	capacity_matrix = SparseMatrixCSC{AbstractFloat, Int64}(adjacency_matrix(g))
-	S = BitArray(fill(0, n)); S[s] = 1
-	T = BitArray(fill(0, n)); T[t] = 1
+	S = falses(n); S[s] = 1
+	T = falses(n); T[t] = 1
 
-	S_reachable = BitArray(fill(0, n)); S_reachable[s] = 1
-	T_reachable = BitArray(fill(0, n)); T_reachable[t] = 1
+	S_reachable = copy(S)
+	T_reachable = copy(T)
 
 	while !any(S .& T)
 		if any(S_reachable .& T_reachable)
