@@ -4,6 +4,22 @@
     bag_size::Int64 = length(boundary) + length(interior)
 end
 
+
+"""
+    bfs_non_satured_path(g, root, objective, capacity_matrix, flow_matrix)
+Start a breadth first search in a graph g from root node to one of his objective
+nodes following only non satured arcs.
+
+# Arguments
+- `g::SimpleGraph` the graph to explore.
+- `root::Int64` the index of the node where to start exploration.
+- `objective::Set{Int64}` objective nodes where to end the exporation.
+- `capacity_matrix::Array{Int64, 2}` capacities of arcs.
+- `flow_matrix::Array{Int64, 2}` current flow of arcs.
+
+# Return
+- `v::Int64` the final objective node visited.
+"""
 function bfs_non_satured_path(
         g::SimpleGraph,
         root::Int64,
