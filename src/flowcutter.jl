@@ -1,149 +1,57 @@
-@with_kw struct Cell
-    boundary::Vector{Int64}
-    interior::Vector{Int64}
-    bag_size::Int64 = length(boundary) + length(interior)
-end
-
-
 """
-    bfs_non_satured_path(g, root, objective, capacity_matrix, flow_matrix)
-Start a breadth first search in a graph g from root node to one of his objective
-nodes following only non satured arcs.
+    forward_growing!(set, g, flow_matrix, capacity_matrix, reverse)
+Start a breadth first search in a graph g from nodes in set following only non
+satured arcs. This function update the set and add to it every nodes that can be
+reached from the nodes in set. Can be reverse to find the nodes which can reach
+those in the set.
 
 # Arguments
+- `set::BitVector` the set of nodes to consider.
 - `g::SimpleGraph` the graph to explore.
-- `root::Int64` the index of the node where to start exploration.
-- `objective::Set{Int64}` objective nodes where to end the exporation.
 - `capacity_matrix::Array{Int64, 2}` capacities of arcs.
 - `flow_matrix::Array{Int64, 2}` current flow of arcs.
+- `reverse::Bool` if true it does backward growing.
 
 # Return
-- `v::Int64` the final objective node visited.
+- nothing (only set is modified)
 """
-function bfs_non_satured_path(
-        g::SimpleGraph,
-        root::Int64,
-        objective::Set{Int64},
-        capacity_matrix::Array{Int64, 2},
-        flow_matrix::Array{Int64, 2})
-
-    visited = fill(false, nv(g))
-    queue = Queue{Int64}()
-    visited[root] = true
-    enqueue!(queue, root)
-    while !isempty(queue)
-        v = dequeue!(queue)
-        if v in objective
-            return v
-        end
-        for n in neighbors(g, v)
-            if (flow_matrix[v, n] != capacity_matrix[v, n]) && (!visited[n])
-                visited[v] = true
-                enqueue!(queue, v)
+function forward_growing!(set, g, flow_matrix, capacity_matrix, reverse::Bool=false)
+    # in case of backward growing we swap the flow
+    if reverse
+        flow_matrix .*= -1
+    end
+    # init the breadth first search algorithm
+    q = Queue{Int64}()
+    enqueue!.([q], findall(x -> x > 0, set))
+    set .= false
+    while !isempty(q)
+        cur = dequeue!(q)
+        set[cur] = true
+        for nei in neighbors(g, cur)
+            if !set[nei] && flow_matrix[cur, nei] < capacity_matrix[cur, nei]
+                set[nei] = true
+                enqueue!(q, nei)
             end
         end
     end
+    nothing
 end
 
-function forward_grow!(
-        set::Set{Int64},
-        g::SimpleGraph,
-        capacity_matrix::Array{Int64, 2},
-        flow_matrix::Array{Int64, 2})
-
-    to_explore = setdiff(vertices(g), set)
-    for node in to_explore
-        for x in set
-            queue = Queue{Int64}()
-        end
-    end
-end
 
 function flowcutter(g::SimpleGraph, s::Int64, t::Int64)
-    S, T = [s], [t]
-    reachable_S, reachable_T = [s], [t]
+    flow_matrix = zeros(n, n)
+	capacity_matrix = SparseMatrixCSC{AbstractFloat, Int64}(adjacency_matrix(g))
+	S = BitArray(fill(0, n)); S[s] = 1
+	T = BitArray(fill(0, n)); T[t] = 1
 
-end
+	S_reachable = BitArray(fill(0, n)); S_reachable[s] = 1
+	T_reachable = BitArray(fill(0, n)); T_reachable[t] = 1
 
-"""
-    split_cell(cell, g)
-Computes a separator using flow cutter algorithm and return one final cell and
-multiple open cells for nested recursion.
-
-# Arguments
-- `cell::Cell` the cell to split
-- `g::SimpleGraph` the graph which contains the cell
-
-# Return
-- `cf::Cell` the final cell from separator
-- `co::Vector{Cell}` the rest of open cells from the separation
-"""
-function split_cell(cell::Cell, g::SimpleGraph)
-    # be careful with subgraph they are new graph with their own indices
-    # use vmap to map the i index of the subgraph to vmap[i] its original index
-    gc, vmap = induced_subgraph(g, cell.interior)
-    # choose randomly 2 distinct nodes to became source and target for flowcutter
-    s, t = sample(cell.interior, 2, replace = false)
-    sep = flowcutter(gc, s, t)
-    # TODO fix cells co for return values, and try to implement this without Cell
-    return (
-        Cell(boundary = cell.boundary, interior = sep),
-        setdiff(vertices(gc), sep)
-    )
-end
-
-"""
-    nested_dissection(g)
-Computes an approximation of the upper bound of the treewidth of the graph G and
-an order for elimination using the nested dissection and the flow cutter algorithm.
-
-
-# Arguments
-- `g::SimpleGraph{Int64}`: the graph to analyse.
-
-# Return
-- ordering::`Vector{Int64}` an array of vertices index.
-- result::`Int64`  of the approximation.
-
-# Examples
-```jlrepl
-julia> G = smallgraph("house")
-
-julia> nested_dissection(G)
-([1, 5, 4, 3, 2], 2)
-```
-"""
-function nested_dissection(g::SimpleGraph{Int64})
-    # init cells sets
-    open_cells = PriorityQueue{Cell, Int64}(Base.Order.Reverse)
-    enqueue!(open_cells, Cell(boundary = [], interior = vertices(g)), nv(g))
-    finals_cells::Vector{Cell} = []
-    max_bag_size_finals = 0
-
-    c = peek(open_cells).first
-    while c.bag_size > max_bag_size_finals
-        c = dequeue!(open_cells)
-        # split the current cell (using a separator from flow cutter)
-        cf, co = split_cell(c)
-
-        # updating finals cells set and its max bag size
-        push!(finals_cells, cf)
-        max_bag_size_finals = max(max_bag_size_finals, cf.bag_size)
-
-        # update the open cells set
-        for c in co
-            enqueue!(open_cells, c, c.bag_size)
-        end
-        # the next cell is the max_bag_size
-        c = peek(open_cells).first
-    end
-    treewidth = max(map(v -> v.bag_size, finals_cells), map(v -> v.bag_size, open_cells))
-    order = vcat(
-        map(
-            cell -> vcat(cell.interior, cell.boundary),
-            vcat(collect(keys(open_cells)), reverse(finals_cells))
-            )...
-    )
-
-    return (order, treewidth)
+	while !any(S .& T)
+		if any(S_reachable .& T_reachable)
+			body
+		else
+			body2
+		end
+	end
 end
