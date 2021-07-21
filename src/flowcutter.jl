@@ -41,16 +41,40 @@ function forward_grow!(
     nothing
 end
 
-function augment_flow!(flow_matrix, capacity_matrix, g, source, target)
-	body
+function augment_flow!(flow_matrix, capacity_matrix, g, source::Int64, target::Int64)
+	# first find an augmented path from source to target with a DFS
+	stack = Stack{Int64}()
+	visited = falses(nv(g))
+	push!(stack, source)
+	visited[source] = true
+	prevs = Array{Int64, 1}(undef, nv(g))
+	cur = source
+	while cur != target
+		cur = pop!(stack)
+		push!(path, cur)
+		for nei in neighbors(g, cur)
+			if !visited[nei] && flow_matrix[cur, nei] < capacity_matrix[cur, nei]
+                visited[nei] = true
+                push!(stack, nei)
+				prevs[nei] = cur
+            end
+		end
+	end
+	path = [target]
+	while cur != source
+		cur = prevs[cur]
+		push!(path, cur)
+	end
+	reverse!(path)
 end
 
 
 function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
+	add_vertex!(g)
+	add_vertex!(g)
+
 	n = nv(g)
 
-	add_vertex!(g)
-	add_vertex!(g)
 	super_s = nv(g) - 1
 	super_t = nv(g)
 
@@ -92,7 +116,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				add_edge!(g, super_s, x)
 				capacity_matrix[super_s, x] = Inf
 				S_reachable[x] = 1
-				
+
 				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
 			else
 				forward_grow!(T, g, flow_matrix, capacity_matrix, reverse=true)
