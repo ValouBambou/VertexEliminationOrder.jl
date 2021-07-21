@@ -18,7 +18,7 @@ those in the set.
 function forward_growing!(set, g, flow_matrix, capacity_matrix, reverse::Bool=false)
     # in case of backward growing we swap the flow
     if reverse
-        flow_matrix .*= -1
+        flow_matrix = -1 .* flow_matrix
     end
     # init the breadth first search algorithm
     q = Queue{Int64}()
