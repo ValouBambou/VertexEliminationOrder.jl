@@ -1,5 +1,5 @@
 """
-    forward_growing!(set, g, flow_matrix, capacity_matrix, reverse)
+    forward_grow!(set, g, flow_matrix, capacity_matrix, reverse)
 Start a breadth first search in a graph g from nodes in set following only non
 satured arcs. This function update the set and add to it every nodes that can be
 reached from the nodes in set. Can be reverse to find the nodes which can reach
@@ -15,7 +15,11 @@ those in the set.
 # Return
 - `nothing` (only set is modified)
 """
-function forward_growing!(set, g, flow_matrix, capacity_matrix, reverse::Bool=false)
+function forward_grow!(
+		set::BitVector,
+		g::SimpleGraph,
+		flow_matrix::Array{Int64, 2},
+		capacity_matrix, reverse::Bool=false)
     # in case of backward growing we swap the flow
     if reverse
         flow_matrix = -1 .* flow_matrix
@@ -37,8 +41,12 @@ function forward_growing!(set, g, flow_matrix, capacity_matrix, reverse::Bool=fa
     nothing
 end
 
+function augment_flow!(flow_matrix, capacity_matrix, g, source, target)
+	body
+end
 
-function flowcutter(g::SimpleGraph, s::Int64, t::Int64)
+
+function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
 	n = nv(g)
     flow_matrix = zeros(n, n)
 	capacity_matrix = SparseMatrixCSC{AbstractFloat, Int64}(adjacency_matrix(g))
@@ -48,11 +56,50 @@ function flowcutter(g::SimpleGraph, s::Int64, t::Int64)
 	S_reachable = copy(S)
 	T_reachable = copy(T)
 
+	cuts::Vector{Vector{Pair{Int64, Int64}}} = []
+
 	while !any(S .& T)
 		if any(S_reachable .& T_reachable)
-			body
+			augment_flow!(flow_matrix, capacity_matrix, g, s, t)
+			S_reachable = copy(S)
+			T_reachable = copy(T)
+			forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
+			forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, reverse=true)
 		else
-			body2
+			if sum(S_reachable) <= sum(T_reachable)
+				forward_grow!(S, g, flow_matrix, capacity_matrix)
+				# output source side cut edges
+				cut = filter(
+					e ->
+						(S_reachable[e.src] && T_reachable[e.dest])
+					 	||
+						(S_reachable[e.dest] && T_reachable[e.src]),
+					edges(g)
+				)
+				push!(cuts, cut)
+
+				x = get_piercing_node()
+				S[x] = 1
+				S_reachable[x] = 1
+				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
+			else
+				forward_grow!(T, g, flow_matrix, capacity_matrix, reverse=true)
+				# output source side cut edges
+				cut = filter(
+					e ->
+						(S_reachable[e.src] && T_reachable[e.dest])
+					 	||
+						(S_reachable[e.dest] && T_reachable[e.src]),
+					edges(g)
+				)
+				push!(cuts, cut)
+
+				x = get_piercing_node()
+				T[x] = 1
+				T_reachable[x] = 1
+				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, reverse=true)
+			end
 		end
 	end
+	return cuts
 end
