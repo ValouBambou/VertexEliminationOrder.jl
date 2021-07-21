@@ -46,21 +46,30 @@ function augment_flow!(flow_matrix, capacity_matrix, g, source, target)
 end
 
 
-function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
+function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 	n = nv(g)
+
+	add_vertex!(g)
+	add_vertex!(g)
+	super_s = nv(g) - 1
+	super_t = nv(g)
+
     flow_matrix = zeros(n, n)
-	capacity_matrix = SparseMatrixCSC{AbstractFloat, Int64}(adjacency_matrix(g))
-	S = falses(n); S[s] = 1
-	T = falses(n); T[t] = 1
+	capacity_matrix = SparseMatrixCSC{Int64, Int64}(adjacency_matrix(g))
+	capacity_matrix[super_s, s] = Inf
+	capacity_matrix[t, super_t] = Inf
+
+	S = falses(n); S[[super_s, s]] .= 1
+	T = falses(n); T[[super_t, t]] .= 1
 
 	S_reachable = copy(S)
 	T_reachable = copy(T)
 
 	cuts::Vector{Vector{Pair{Int64, Int64}}} = []
 
-	while !any(S .& T)
+	while (!any(S .& T)) || (sum(S .| T) >= n)
 		if any(S_reachable .& T_reachable)
-			augment_flow!(flow_matrix, capacity_matrix, g, s, t)
+			augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
 			S_reachable = copy(S)
 			T_reachable = copy(T)
 			forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
@@ -80,7 +89,10 @@ function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
 
 				x = get_piercing_node()
 				S[x] = 1
+				add_edge!(g, super_s, x)
+				capacity_matrix[super_s, x] = Inf
 				S_reachable[x] = 1
+				
 				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
 			else
 				forward_grow!(T, g, flow_matrix, capacity_matrix, reverse=true)
@@ -96,7 +108,10 @@ function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
 
 				x = get_piercing_node()
 				T[x] = 1
+				add_edge!(g, x, super_t)
+				capacity_matrix[x, super_t] = Inf
 				T_reachable[x] = 1
+
 				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, reverse=true)
 			end
 		end
