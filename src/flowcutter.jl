@@ -69,9 +69,8 @@ function augment_flow!(flow_matrix::Array{Int64, 2},
 	visited[source] = true
 	prevs = Array{Int64, 1}(undef, nv(g))
 	cur = source
-	while (cur != target && (!isempty(stack))
+	while (cur != target) && (!isempty(stack))
 		cur = pop!(stack)
-		push!(path, cur)
 		for nei in neighbors(g, cur)
 			if !visited[nei] && flow_matrix[cur, nei] < capacity_matrix[cur, nei]
                 visited[nei] = true
@@ -119,7 +118,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 	super_s = nv(g) - 1
 	super_t = nv(g)
 
-    flow_matrix = zeros(n, n)
+    flow_matrix = zeros(Int64, n, n)
 	capacity_matrix = SparseMatrixCSC{Int64, Int64}(adjacency_matrix(g))
 	capacity_matrix[super_s, s] = Inf
 	capacity_matrix[t, super_t] = Inf

@@ -4,9 +4,11 @@ using LightGraphs
 using Parameters
 using DataStructures
 using StatsBase
+using SparseArrays
 
 include("heuristics.jl")
-export minfill!, minwidth!
+include("flowcutter.jl")
+export minfill!, minwidth!, augment_flow!
 
 
 end
