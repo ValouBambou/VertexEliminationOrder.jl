@@ -8,7 +8,7 @@ those in the set.
 # Arguments
 - `set::BitVector` the set of nodes to consider.
 - `g::SimpleGraph` the graph to explore.
-- `capacity_matrix::Array{Int64, 2}` capacities of arcs.
+- `capacity_matrix::SparseMatrixCSC{Int64, Int64}` capacities of arcs.
 - `flow_matrix::Array{Int64, 2}` current flow of arcs.
 - `reverse::Bool` if true it does backward growing.
 
@@ -18,7 +18,7 @@ those in the set.
 function forward_grow!(set::BitVector,
 					   g::SimpleGraph,
 					   flow_matrix::Array{Int64, 2},
-					   capacity_matrix,
+					   capacity_matrix::SparseMatrixCSC{Int64, Int64},
 					   reverse::Bool=false)
     # in case of backward growing we swap the flow
     if reverse
@@ -29,10 +29,11 @@ function forward_grow!(set::BitVector,
     enqueue!.([q], findall(x -> x > 0, set))
     set .= false
     while !isempty(q)
+		@debug q
         cur = dequeue!(q)
         set[cur] = true
         for nei in neighbors(g, cur)
-            if !set[nei] && flow_matrix[cur, nei] < capacity_matrix[cur, nei]
+            if !set[nei] && flow_matrix[cur, nei] == 0 && capacity_matrix[cur, nei] == 1
                 set[nei] = true
                 enqueue!(q, nei)
             end
@@ -137,7 +138,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 			S_reachable = copy(S)
 			T_reachable = copy(T)
 			forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
-			forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, reverse=true)
+			forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
 		else
 			if sum(S_reachable) <= sum(T_reachable)
 				forward_grow!(S, g, flow_matrix, capacity_matrix)
@@ -159,7 +160,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
 				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
 			else
-				forward_grow!(T, g, flow_matrix, capacity_matrix, reverse=true)
+				forward_grow!(T, g, flow_matrix, capacity_matrix, true)
 				# output source side cut edges
 				cut = filter(
 					e ->
@@ -176,7 +177,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				capacity_matrix[x, super_t] = Inf
 				T_reachable[x] = 1
 
-				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, reverse=true)
+				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
 			end
 		end
 	end
