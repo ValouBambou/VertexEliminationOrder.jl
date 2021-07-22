@@ -15,11 +15,11 @@ those in the set.
 # Return
 - `nothing` (only set is modified)
 """
-function forward_grow!(
-		set::BitVector,
-		g::SimpleGraph,
-		flow_matrix::Array{Int64, 2},
-		capacity_matrix, reverse::Bool=false)
+function forward_grow!(set::BitVector,
+					   g::SimpleGraph,
+					   flow_matrix::Array{Int64, 2},
+					   capacity_matrix,
+					   reverse::Bool=false)
     # in case of backward growing we swap the flow
     if reverse
         flow_matrix = -1 .* flow_matrix
@@ -41,7 +41,27 @@ function forward_grow!(
     nothing
 end
 
-function augment_flow!(flow_matrix, capacity_matrix, g, source::Int64, target::Int64)
+"""
+	augment_flow!(flow_matrix, capacity_matrix, g, source, target)
+Find an augmenting path and augment the flow of 1 unit along it. The flow_matrix
+is modified for every arc (u,v) in the path it does flow_matrix[u, v] += 1 and
+flow_matrix[v,u] += -1.
+
+# Arguments
+-`flow_matrix::Array{Int64, 2}` the value of the current flow which may be modified.
+-`capacity_matrix::SparseMatrixCSC{Int64, Int64}` the value of the arcs capacities.
+-`g::SimpleGraph` the graph to consider.
+-`source::Int64` index of the source node.
+-`target::Int64` index of the target node.
+
+# Return
+- `augment::Int64` the augmentation of the flow so 1 if path is found, 0 otherwise.
+"""
+function augment_flow!(flow_matrix::Array{Int64, 2},
+					   capacity_matrix::SparseMatrixCSC{Int64, Int64},
+					   g::SimpleGraph,
+					   source::Int64,
+					   target::Int64)
 	# first find an augmented path from source to target with a DFS
 	stack = Stack{Int64}()
 	visited = falses(nv(g))
@@ -49,7 +69,7 @@ function augment_flow!(flow_matrix, capacity_matrix, g, source::Int64, target::I
 	visited[source] = true
 	prevs = Array{Int64, 1}(undef, nv(g))
 	cur = source
-	while cur != target
+	while (cur != target && (!isempty(stack))
 		cur = pop!(stack)
 		push!(path, cur)
 		for nei in neighbors(g, cur)
@@ -60,15 +80,36 @@ function augment_flow!(flow_matrix, capacity_matrix, g, source::Int64, target::I
             end
 		end
 	end
-	path = [target]
-	while cur != source
-		cur = prevs[cur]
-		push!(path, cur)
+
+	return if cur == target
+		# augmenting path exists so augment flow along it
+		while cur != source
+			next = cur
+			cur = prevs[cur]
+			flow_matrix[cur, next] += 1
+			flow_matrix[next, cur] += -1
+		end
+		1
+	else
+		0
 	end
-	reverse!(path)
 end
 
 
+"""
+	flowcutter!(g, source, target)
+Computes multiple cuts more and more balanced in a graph g. The graph g is modified
+to limit the allocations (add super source and target for implementation purpose) so be aware and prepare a copy
+or remove those extra vertices after using this function.
+
+# Arguments
+-`g::SimpleGraph` the graph to consider.
+-`source::Int64` index of the source node.
+-`target::Int64` index of the target node.
+
+# Return
+-`cuts::Vector{Vector{Pair{Int64, Int64}}}` all the cuts computed by flowcutter.
+"""
 function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 	add_vertex!(g)
 	add_vertex!(g)
