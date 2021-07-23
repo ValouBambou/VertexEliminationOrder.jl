@@ -158,7 +158,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				forward_grow!(S, g, flow_matrix, capacity_matrix)
 				# output source side cut edges
 				for e in edges(g)
-					if (S_reachable[e.src] && T_reachable[e.dst])||(S_reachable[e.dst] && T_reachable[e.src])
+					if S_reachable[e.src] ⊻ S_reachable[e.dst]
 						push!(cut, e.src=>e.dst)
 					end
 				end
@@ -176,7 +176,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				# output target side cut edges
 
 				for e in edges(g)
-					if (S_reachable[e.src] && T_reachable[e.dst])||(S_reachable[e.dst] && T_reachable[e.src])
+					if T_reachable[e.src] ⊻ T_reachable[e.dst]
 						push!(cut, e.src=>e.dst)
 					end
 				end
