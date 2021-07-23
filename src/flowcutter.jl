@@ -100,12 +100,27 @@ end
 	piercing_node(g, sources, targets, SR, TR)
 Compute which node will become a new source or target to balance the current cut.
 """
-function piercing_node(g::SimpleGraph,
-						   sources::BitVector,
-						   targets::BitVector,
-						   SR::BitVector,
-						   TR::BitVector)::Int64
-
+function piercing_node(cut::Vector{Pair{Int64, Int64}},
+					   to_increase::BitVector,
+					   to_avoid::BitVector,
+					   increase_node::Int64,
+					   avoid_node::Int64,
+					   dist::Array{Int64, 2})::Int64
+	# first heuristic
+	best_nodes = findall(.~(to_increase .| to_avoid))
+	nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
+	res = findfirst(p -> best_nodes[p], nodes)
+	return if isnothing(res)
+		# second heuristic
+		nodes[findmax(
+			map(
+				p -> dist[p, avoid_node] - dist[increase_node, p],
+				nodes
+			)
+		)[2]]
+		else
+			res
+		end
 end
 
 
@@ -128,6 +143,8 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 	add_vertex!(g)
 
 	n = nv(g)
+
+	dist = floyd_warshall_shortest_paths(g).dists
 
 	super_s = nv(g) - 1
 	super_t = nv(g)
