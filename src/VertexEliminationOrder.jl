@@ -8,7 +8,7 @@ using SparseArrays
 
 include("heuristics.jl")
 include("flowcutter.jl")
-export minfill!, minwidth!, augment_flow!, forward_grow!
+export minfill!, minwidth!, augment_flow!, forward_grow!, flowcutter!
 
 
 end

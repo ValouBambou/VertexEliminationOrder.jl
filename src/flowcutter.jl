@@ -19,7 +19,7 @@ function forward_grow!(set::BitVector,
 					   g::SimpleGraph,
 					   flow_matrix::Array{Int64, 2},
 					   capacity_matrix::SparseMatrixCSC{Int64, Int64},
-					   reverse::Bool=false)
+					   reverse::Bool=false)::Nothing
     # in case of backward growing we swap the flow
     if reverse
         flow_matrix = -1 .* flow_matrix
@@ -62,7 +62,7 @@ function augment_flow!(flow_matrix::Array{Int64, 2},
 					   capacity_matrix::SparseMatrixCSC{Int64, Int64},
 					   g::SimpleGraph,
 					   source::Int64,
-					   target::Int64)
+					   target::Int64)::Int64
 	# first find an augmented path from source to target with a DFS
 	stack = Stack{Int64}()
 	visited = falses(nv(g))
@@ -97,6 +97,19 @@ end
 
 
 """
+	piercing_node(g, sources, targets, SR, TR)
+Compute which node will become a new source or target to balance the current cut.
+"""
+function piercing_node(g::SimpleGraph,
+						   sources::BitVector,
+						   targets::BitVector,
+						   SR::BitVector,
+						   TR::BitVector)::Int64
+
+end
+
+
+"""
 	flowcutter!(g, source, target)
 Computes multiple cuts more and more balanced in a graph g. The graph g is modified
 to limit the allocations (add super source and target for implementation purpose) so be aware and prepare a copy
@@ -121,11 +134,11 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
     flow_matrix = zeros(Int64, n, n)
 	capacity_matrix = SparseMatrixCSC{Int64, Int64}(adjacency_matrix(g))
-	capacity_matrix[super_s, s] = Inf
-	capacity_matrix[t, super_t] = Inf
+	capacity_matrix[super_s, source] = typemax(Int64)
+	capacity_matrix[target, super_t] = typemax(Int64)
 
-	S = falses(n); S[[super_s, s]] .= 1
-	T = falses(n); T[[super_t, t]] .= 1
+	S = falses(n); S[[super_s, source]] .= 1
+	T = falses(n); T[[super_t, target]] .= 1
 
 	S_reachable = copy(S)
 	T_reachable = copy(T)
@@ -140,19 +153,18 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 			forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
 			forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
 		else
+			cut::Vector{Pair{Int64, Int64}} = []
 			if sum(S_reachable) <= sum(T_reachable)
 				forward_grow!(S, g, flow_matrix, capacity_matrix)
 				# output source side cut edges
-				cut = filter(
-					e ->
-						(S_reachable[e.src] && T_reachable[e.dest])
-					 	||
-						(S_reachable[e.dest] && T_reachable[e.src]),
-					edges(g)
-				)
+				for e in edges(g)
+					if (S_reachable[e.src] && T_reachable[e.dst])||(S_reachable[e.dst] && T_reachable[e.src])
+						push!(cut, e.src=>e.dst)
+					end
+				end
 				push!(cuts, cut)
 
-				x = get_piercing_node()
+				x = piercing_node()
 				S[x] = 1
 				add_edge!(g, super_s, x)
 				capacity_matrix[super_s, x] = Inf
@@ -161,17 +173,16 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
 			else
 				forward_grow!(T, g, flow_matrix, capacity_matrix, true)
-				# output source side cut edges
-				cut = filter(
-					e ->
-						(S_reachable[e.src] && T_reachable[e.dest])
-					 	||
-						(S_reachable[e.dest] && T_reachable[e.src]),
-					edges(g)
-				)
+				# output target side cut edges
+
+				for e in edges(g)
+					if (S_reachable[e.src] && T_reachable[e.dst])||(S_reachable[e.dst] && T_reachable[e.src])
+						push!(cut, e.src=>e.dst)
+					end
+				end
 				push!(cuts, cut)
 
-				x = get_piercing_node()
+				x = piercing_node()
 				T[x] = 1
 				add_edge!(g, x, super_t)
 				capacity_matrix[x, super_t] = Inf

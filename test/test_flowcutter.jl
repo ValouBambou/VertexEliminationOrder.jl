@@ -39,3 +39,7 @@ expected_TR = falses(5); expected_TR[[1, 3, 4, 5]] .= true
 @info "Testing forward_grow! (backward) with house graph"
 forward_grow!(TR, G, flow, cap, true)
 @test TR == expected_TR
+
+#test flowcutter
+
+@info flowcutter!(G, 5, 1)
