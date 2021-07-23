@@ -112,12 +112,14 @@ function piercing_node(cut::Vector{Pair{Int64, Int64}},
 	res = findfirst(p -> best_nodes[p], nodes)
 	return if isnothing(res)
 		# second heuristic
-		nodes[findmax(
-			map(
-				p -> dist[p, avoid_node] - dist[increase_node, p],
-				nodes
-			)
-		)[2]]
+		nodes[
+			findmax(
+				map(
+					p -> dist[p, avoid_node] - dist[increase_node, p],
+					nodes
+				)
+			)[2]
+		]
 		else
 			res
 		end
