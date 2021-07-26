@@ -96,8 +96,19 @@ end
 
 
 """
-	piercing_node(g, sources, targets, SR, TR)
+	piercing_node(cut, to_increase, to_avoid, increase_node, avoid_node, dist)
 Compute which node will become a new source or target to balance the current cut.
+
+# Arguments
+-`cut::Vector{Pair{Int64, Int64}}` the current cut set of edges.
+-`to_increase::BitVector` the side of the cut to increase.
+-`to_avoid::BitVector` the side to the cut to not increase.
+-`increase_node::Int64` the original source or target of to_increase.
+-`avoid_node::Int64` the original source or target of to_avoid.
+-`dist::Array{Int64, 2}` a matrix of distances (shortest path 1 per edge) between all nodes of the graph.
+
+# Return
+-`node::Int64` the new piercing node to balance the cut.
 """
 function piercing_node(cut::Vector{Pair{Int64, Int64}},
 					   to_increase::BitVector,
