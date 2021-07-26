@@ -107,7 +107,7 @@ function piercing_node(cut::Vector{Pair{Int64, Int64}},
 					   avoid_node::Int64,
 					   dist::Array{Int64, 2})::Int64
 	# first heuristic
-	best_nodes = findall(.~(to_increase .| to_avoid))
+	best_nodes = .~(to_increase .| to_avoid)
 	nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
 	res = findfirst(p -> best_nodes[p], nodes)
 	return if isnothing(res)
@@ -164,7 +164,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
 	cuts::Vector{Vector{Pair{Int64, Int64}}} = []
 
-	while (!any(S .& T)) || (sum(S .| T) >= n)
+	while (!any(S .& T)) || (sum(S .| T) < n)
 		if any(S_reachable .& T_reachable)
 			augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
 			S_reachable = copy(S)
@@ -183,10 +183,10 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				end
 				push!(cuts, cut)
 
-				x = piercing_node()
+				x = piercing_node(cut, S_reachable, T_reachable, source, target, dist)
 				S[x] = 1
 				add_edge!(g, super_s, x)
-				capacity_matrix[super_s, x] = Inf
+				capacity_matrix[super_s, x] = typemax(Int64)
 				S_reachable[x] = 1
 
 				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
@@ -201,10 +201,10 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 				end
 				push!(cuts, cut)
 
-				x = piercing_node()
+				x = piercing_node(cut, T_reachable, S_reachable, target, source, dist)
 				T[x] = 1
 				add_edge!(g, x, super_t)
-				capacity_matrix[x, super_t] = Inf
+				capacity_matrix[x, super_t] = typemax(Int64)
 				T_reachable[x] = 1
 
 				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
