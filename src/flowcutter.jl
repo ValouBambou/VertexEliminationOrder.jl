@@ -106,22 +106,24 @@ function piercing_node(cut::Vector{Pair{Int64, Int64}},
 					   avoid_node::Int64,
 					   dist::Array{Int64, 2})::Int64
 	# first heuristic
+	@debug "----Piercing node -----"
 	best_nodes = .~(to_increase .| to_avoid)
 	nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
 	res = findfirst(p -> best_nodes[p], nodes)
-	return if isnothing(res)
+	@debug "best_nodes = $best_nodes"
+	@debug "nodes=$nodes"
+	res = if isnothing(res)
 		# second heuristic
-		nodes[
-			findmax(
-				map(
-					p -> dist[p, avoid_node] - dist[increase_node, p],
-					nodes
-				)
-			)[2]
-		]
+		findmax(
+			map(
+				p -> dist[p, avoid_node] - dist[increase_node, p],
+				nodes
+			)
+		)[2]
 		else
 			res
 		end
+	return nodes[res]
 end
 
 

@@ -22,12 +22,13 @@ expected_flow[1, 3] = -1
 # no more augmenting path available
 @test augment_flow!(flow, cap, G, 5, 1) == 0
 
-# test forward growing
 # undo the last flow augmentation
 flow[5, 3] = 0
 flow[3, 5] = 0
 flow[3, 1] = 0
 flow[1, 3] = 0
+
+# test forward growing
 SR = falses(5); SR[5] = true
 expected_SR = falses(5); expected_SR[[1, 3, 4, 5]] .= true
 forward_grow!(SR, G, flow, cap)
@@ -40,6 +41,13 @@ expected_TR = falses(5); expected_TR[[1, 3, 4, 5]] .= true
 forward_grow!(TR, G, flow, cap, true)
 @test TR == expected_TR
 
-#test flowcutter
+# test piercing_node
+dist = floyd_warshall_shortest_paths(G).dists
+cut = [4=>2, 4=>3, 5=>3]
+SR=falses(5); SR[[4, 5]] .= true
+TR=falses(5); SR[[1, 3]] .= true
+@info "Testing piercing_node with house graph"
+@test piercing_node(cut, SR, TR, 5, 1, dist) == 2
 
+#test flowcutter
 @info flowcutter!(G, 5, 1)
