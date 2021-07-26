@@ -29,11 +29,10 @@ function forward_grow!(set::BitVector,
     enqueue!.([q], findall(x -> x > 0, set))
     set .= false
     while !isempty(q)
-		@debug q
         cur = dequeue!(q)
         set[cur] = true
         for nei in neighbors(g, cur)
-            if !set[nei] && flow_matrix[cur, nei] == 0 && capacity_matrix[cur, nei] == 1
+            if !set[nei] && abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 set[nei] = true
                 enqueue!(q, nei)
             end
@@ -73,7 +72,7 @@ function augment_flow!(flow_matrix::Array{Int64, 2},
 	while (cur != target) && (!isempty(stack))
 		cur = pop!(stack)
 		for nei in neighbors(g, cur)
-			if !visited[nei] && flow_matrix[cur, nei] < capacity_matrix[cur, nei]
+			if !visited[nei] && abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 visited[nei] = true
                 push!(stack, nei)
 				prevs[nei] = cur
@@ -148,8 +147,11 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
 	dist = floyd_warshall_shortest_paths(g).dists
 
-	super_s = nv(g) - 1
-	super_t = nv(g)
+	super_s = n - 1
+	super_t = n
+
+	add_edge!(g, super_s, source)
+	add_edge!(g, super_t, target)
 
     flow_matrix = zeros(Int64, n, n)
 	capacity_matrix = SparseMatrixCSC{Int64, Int64}(adjacency_matrix(g))
@@ -164,8 +166,16 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
 	cuts::Vector{Vector{Pair{Int64, Int64}}} = []
 
-	while (!any(S .& T)) || (sum(S .| T) < n)
+	forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
+	forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
+
+	while (!any(S .& T)) && (sum(S .| T) < n)
+		@debug "S=$S"
+		@debug "T=$T"
+		@debug "SR=$S_reachable"
+		@debug "TR=$T_reachable"
 		if any(S_reachable .& T_reachable)
+			@debug "----- Enter in the augment flow section -----"
 			augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
 			S_reachable = copy(S)
 			T_reachable = copy(T)
@@ -174,6 +184,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 		else
 			cut::Vector{Pair{Int64, Int64}} = []
 			if sum(S_reachable) <= sum(T_reachable)
+				@debug "----- Enter in the source side cut section -----"
 				forward_grow!(S, g, flow_matrix, capacity_matrix)
 				# output source side cut edges
 				for e in edges(g)
@@ -185,12 +196,13 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
 				x = piercing_node(cut, S_reachable, T_reachable, source, target, dist)
 				S[x] = 1
+				S_reachable[x] = 1
 				add_edge!(g, super_s, x)
 				capacity_matrix[super_s, x] = typemax(Int64)
-				S_reachable[x] = 1
 
 				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
 			else
+				@debug "----- Enter in the target side cut section -----"
 				forward_grow!(T, g, flow_matrix, capacity_matrix, true)
 				# output target side cut edges
 
@@ -203,13 +215,19 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 
 				x = piercing_node(cut, T_reachable, S_reachable, target, source, dist)
 				T[x] = 1
+				T_reachable[x] = 1
 				add_edge!(g, x, super_t)
 				capacity_matrix[x, super_t] = typemax(Int64)
-				T_reachable[x] = 1
 
 				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
 			end
 		end
+		@debug "------ In the End of Loop ------"
+		@debug "S=$S"
+		@debug "T=$T"
+		@debug "SR=$S_reachable"
+		@debug "TR=$T_reachable"
+		@debug "--------------------------------"
 	end
 	return cuts
 end
