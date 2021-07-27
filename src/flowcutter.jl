@@ -139,10 +139,8 @@ end
 
 
 """
-	flowcutter!(g, source, target)
-Computes multiple cuts more and more balanced in a graph g. The graph g is modified
-to limit the allocations (add super source and target for implementation purpose) so be aware and prepare a copy
-or remove those extra vertices after using this function.
+	flowcutter(g, source, target)
+Computes multiple cuts more and more balanced in a graph g.
 
 # Arguments
 -`g::SimpleGraph` the graph to consider.
@@ -152,7 +150,7 @@ or remove those extra vertices after using this function.
 # Return
 -`cuts::Vector{Vector{Pair{Int64, Int64}}}` all the cuts computed by flowcutter.
 """
-function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
+function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
 	add_vertex!(g)
 	add_vertex!(g)
 
@@ -242,5 +240,7 @@ function flowcutter!(g::SimpleGraph, source::Int64, target::Int64)
 		@debug "TR=$T_reachable"
 		@debug "--------------------------------"
 	end
+	rem_vertex!(g, super_s)
+	rem_vertex!(g, super_t)
 	return cuts
 end
