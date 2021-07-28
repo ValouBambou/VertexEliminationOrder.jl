@@ -15,11 +15,13 @@ those in the set.
 # Return
 - `nothing` (only set is modified)
 """
-function forward_grow!(set::BitVector,
-					   g::SimpleGraph,
-					   flow_matrix::Array{Int64, 2},
-					   capacity_matrix::SparseMatrixCSC{Int64, Int64},
-					   reverse::Bool=false)::Nothing
+function forward_grow!(
+    set::BitVector,
+    g::SimpleGraph,
+    flow_matrix::Array{Int64,2},
+    capacity_matrix::SparseMatrixCSC{Int64,Int64},
+    reverse::Bool = false,
+)::Nothing
     # in case of backward growing we swap the flow
     if reverse
         flow_matrix = -1 .* flow_matrix
@@ -32,7 +34,8 @@ function forward_grow!(set::BitVector,
         cur = dequeue!(q)
         set[cur] = true
         for nei in neighbors(g, cur)
-            if !set[nei] && abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
+            if !set[nei] &&
+               abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 set[nei] = true
                 enqueue!(q, nei)
             end
@@ -57,41 +60,44 @@ flow_matrix[v,u] += -1.
 # Return
 - `augment::Int64` the augmentation of the flow so 1 if path is found, 0 otherwise.
 """
-function augment_flow!(flow_matrix::Array{Int64, 2},
-					   capacity_matrix::SparseMatrixCSC{Int64, Int64},
-					   g::SimpleGraph,
-					   source::Int64,
-					   target::Int64)::Int64
-	# first find an augmented path from source to target with a DFS
-	stack = Stack{Int64}()
-	visited = falses(nv(g))
-	push!(stack, source)
-	visited[source] = true
-	prevs = Array{Int64, 1}(undef, nv(g))
-	cur = source
-	while (cur != target) && (!isempty(stack))
-		cur = pop!(stack)
-		for nei in neighbors(g, cur)
-			if !visited[nei] && abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
+function augment_flow!(
+    flow_matrix::Array{Int64,2},
+    capacity_matrix::SparseMatrixCSC{Int64,Int64},
+    g::SimpleGraph,
+    source::Int64,
+    target::Int64,
+)::Int64
+    # first find an augmented path from source to target with a DFS
+    stack = Stack{Int64}()
+    visited = falses(nv(g))
+    push!(stack, source)
+    visited[source] = true
+    prevs = Array{Int64,1}(undef, nv(g))
+    cur = source
+    while (cur != target) && (!isempty(stack))
+        cur = pop!(stack)
+        for nei in neighbors(g, cur)
+            if !visited[nei] &&
+               abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 visited[nei] = true
                 push!(stack, nei)
-				prevs[nei] = cur
+                prevs[nei] = cur
             end
-		end
-	end
+        end
+    end
 
-	return if cur == target
-		# augmenting path exists so augment flow along it
-		while cur != source
-			next = cur
-			cur = prevs[cur]
-			flow_matrix[cur, next] += 1
-			flow_matrix[next, cur] += -1
-		end
-		1
-	else
-		0
-	end
+    return if cur == target
+        # augmenting path exists so augment flow along it
+        while cur != source
+            next = cur
+            cur = prevs[cur]
+            flow_matrix[cur, next] += 1
+            flow_matrix[next, cur] += -1
+        end
+        1
+    else
+        0
+    end
 end
 
 
@@ -110,31 +116,28 @@ Compute which node will become a new source or target to balance the current cut
 # Return
 -`node::Int64` the new piercing node to balance the cut.
 """
-function piercing_node(cut::Vector{Pair{Int64, Int64}},
-					   to_increase::BitVector,
-					   to_avoid::BitVector,
-					   increase_node::Int64,
-					   avoid_node::Int64,
-					   dist::Array{Int64, 2})::Int64
-	# first heuristic
-	@debug "----Piercing node -----"
-	best_nodes = .~(to_increase .| to_avoid)
-	nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
-	res = findfirst(p -> best_nodes[p], nodes)
-	@debug "best_nodes = $best_nodes"
-	@debug "nodes=$nodes"
-	res = if isnothing(res)
-		# second heuristic
-		findmax(
-			map(
-				p -> dist[p, avoid_node] - dist[increase_node, p],
-				nodes
-			)
-		)[2]
-		else
-			res
-		end
-	return nodes[res]
+function piercing_node(
+    cut::Vector{Pair{Int64,Int64}},
+    to_increase::BitVector,
+    to_avoid::BitVector,
+    increase_node::Int64,
+    avoid_node::Int64,
+    dist::Array{Int64,2},
+)::Int64
+    # first heuristic
+    @debug "----Piercing node -----"
+    best_nodes = .~(to_increase .| to_avoid)
+    nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
+    res = findfirst(p -> best_nodes[p], nodes)
+    @debug "best_nodes = $best_nodes"
+    @debug "nodes=$nodes"
+    res = if isnothing(res)
+        # second heuristic
+        findmax(map(p -> dist[p, avoid_node] - dist[increase_node, p], nodes))[2]
+    else
+        res
+    end
+    return nodes[res]
 end
 
 
@@ -151,96 +154,118 @@ Computes multiple cuts more and more balanced in a graph g.
 -`cuts::Vector{Vector{Pair{Int64, Int64}}}` all the cuts computed by flowcutter.
 """
 function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
-	add_vertex!(g)
-	add_vertex!(g)
+    add_vertex!(g)
+    add_vertex!(g)
 
-	n = nv(g)
+    n = nv(g)
 
-	dist = floyd_warshall_shortest_paths(g).dists
+    dist = floyd_warshall_shortest_paths(g).dists
 
-	super_s = n - 1
-	super_t = n
+    super_s = n - 1
+    super_t = n
 
-	add_edge!(g, super_s, source)
-	add_edge!(g, super_t, target)
+    add_edge!(g, super_s, source)
+    add_edge!(g, super_t, target)
 
     flow_matrix = zeros(Int64, n, n)
-	capacity_matrix = SparseMatrixCSC{Int64, Int64}(adjacency_matrix(g))
-	capacity_matrix[super_s, source] = typemax(Int64)
-	capacity_matrix[target, super_t] = typemax(Int64)
+    capacity_matrix = SparseMatrixCSC{Int64,Int64}(adjacency_matrix(g))
+    capacity_matrix[super_s, source] = typemax(Int64)
+    capacity_matrix[target, super_t] = typemax(Int64)
 
-	S = falses(n); S[[super_s, source]] .= 1
-	T = falses(n); T[[super_t, target]] .= 1
+    S = falses(n)
+    S[[super_s, source]] .= 1
+    T = falses(n)
+    T[[super_t, target]] .= 1
 
-	S_reachable = copy(S)
-	T_reachable = copy(T)
+    S_reachable = copy(S)
+    T_reachable = copy(T)
 
-	cuts::Vector{Vector{Pair{Int64, Int64}}} = []
+    cuts::Vector{Vector{Pair{Int64,Int64}}} = []
 
-	forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
-	forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
+    forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
+    forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
 
-	while (!any(S .& T)) && (sum(S .| T) < n)
-		@debug "S=$S"
-		@debug "T=$T"
-		@debug "SR=$S_reachable"
-		@debug "TR=$T_reachable"
-		if any(S_reachable .& T_reachable)
-			@debug "----- Enter in the augment flow section -----"
-			augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
-			S_reachable = copy(S)
-			T_reachable = copy(T)
-			forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
-			forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
-		else
-			cut::Vector{Pair{Int64, Int64}} = []
-			if sum(S_reachable) <= sum(T_reachable)
-				@debug "----- Enter in the source side cut section -----"
-				forward_grow!(S, g, flow_matrix, capacity_matrix)
-				# output source side cut edges
-				for e in edges(g)
-					if S_reachable[e.src] ⊻ S_reachable[e.dst]
-						push!(cut, e.src=>e.dst)
-					end
-				end
-				push!(cuts, cut)
+    while (!any(S .& T)) && (sum(S .| T) < n)
+        @debug "S=$S"
+        @debug "T=$T"
+        @debug "SR=$S_reachable"
+        @debug "TR=$T_reachable"
+        if any(S_reachable .& T_reachable)
+            @debug "----- Enter in the augment flow section -----"
+            augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
+            S_reachable = copy(S)
+            T_reachable = copy(T)
+            forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
+            forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
+        else
+            cut::Vector{Pair{Int64,Int64}} = []
+            if sum(S_reachable) <= sum(T_reachable)
+                @debug "----- Enter in the source side cut section -----"
+                forward_grow!(S, g, flow_matrix, capacity_matrix)
+                # output source side cut edges
+                for e in edges(g)
+                    if S_reachable[e.src] ⊻ S_reachable[e.dst]
+                        push!(cut, e.src => e.dst)
+                    end
+                end
+                push!(cuts, cut)
 
-				x = piercing_node(cut, S_reachable, T_reachable, source, target, dist)
-				S[x] = 1
-				S_reachable[x] = 1
-				add_edge!(g, super_s, x)
-				capacity_matrix[super_s, x] = typemax(Int64)
+                x = piercing_node(
+                    cut,
+                    S_reachable,
+                    T_reachable,
+                    source,
+                    target,
+                    dist,
+                )
+                S[x] = 1
+                S_reachable[x] = 1
+                add_edge!(g, super_s, x)
+                capacity_matrix[super_s, x] = typemax(Int64)
 
-				forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
-			else
-				@debug "----- Enter in the target side cut section -----"
-				forward_grow!(T, g, flow_matrix, capacity_matrix, true)
-				# output target side cut edges
+                forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
+            else
+                @debug "----- Enter in the target side cut section -----"
+                forward_grow!(T, g, flow_matrix, capacity_matrix, true)
+                # output target side cut edges
 
-				for e in edges(g)
-					if T_reachable[e.src] ⊻ T_reachable[e.dst]
-						push!(cut, e.src=>e.dst)
-					end
-				end
-				push!(cuts, cut)
+                for e in edges(g)
+                    if T_reachable[e.src] ⊻ T_reachable[e.dst]
+                        push!(cut, e.src => e.dst)
+                    end
+                end
+                push!(cuts, cut)
 
-				x = piercing_node(cut, T_reachable, S_reachable, target, source, dist)
-				T[x] = 1
-				T_reachable[x] = 1
-				add_edge!(g, x, super_t)
-				capacity_matrix[x, super_t] = typemax(Int64)
+                x = piercing_node(
+                    cut,
+                    T_reachable,
+                    S_reachable,
+                    target,
+                    source,
+                    dist,
+                )
+                T[x] = 1
+                T_reachable[x] = 1
+                add_edge!(g, x, super_t)
+                capacity_matrix[x, super_t] = typemax(Int64)
 
-				forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
-			end
-		end
-		@debug "------ In the End of Loop ------"
-		@debug "S=$S"
-		@debug "T=$T"
-		@debug "SR=$S_reachable"
-		@debug "TR=$T_reachable"
-		@debug "--------------------------------"
-	end
-	rem_vertex!(g, super_s)
-	rem_vertex!(g, super_t)
-	return cuts
+                forward_grow!(
+                    T_reachable,
+                    g,
+                    flow_matrix,
+                    capacity_matrix,
+                    true,
+                )
+            end
+        end
+        @debug "------ In the End of Loop ------"
+        @debug "S=$S"
+        @debug "T=$T"
+        @debug "SR=$S_reachable"
+        @debug "TR=$T_reachable"
+        @debug "--------------------------------"
+    end
+    rem_vertex!(g, super_s)
+    rem_vertex!(g, super_t)
+    return cuts
 end
