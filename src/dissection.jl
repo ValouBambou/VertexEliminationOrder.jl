@@ -15,29 +15,44 @@ function separator!(
     g::SimpleGraph{Int64},
     subgraph_nodes::Vector{Int64},
 )::Tuple{Vector{Int64},Array{Array{Int64,1},1}}
-
+    @debug "------ separator! --------"
     s, t = sample(subgraph_nodes, 2, replace = false)
+
+    # wrapper for flowcutter
+    add_vertex!(g)
+    add_vertex!(g)
     dist = floyd_warshall_shortest_paths(g).dists
+    cuts = flowcutter(g, s, t, dist)
+    n = nv(g)
+    rem_vertex!(g, n)
+    rem_vertex!(g, n - 1)
+
+
     # 60% imbalance is like index = 40% of length(cuts) (as last cuts are close to 0% imbalance)
     # TODO: improve this, probably not what we want
-    cuts = flowcutter(g, s, t, dist)
     cut = cuts[trunc(Int64, 0.4 * length(cuts) + 1)]
     sep = unique(map(a -> sample([a.first, a.second]), cut))
-    n = length(sep)
+    @debug "cut=$cut"
+    @debug "sep=$sep"
+    n -=2
+    @debug "number of nodes = $(nv(g))"
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
-    indices = Array(1:n)
-    for i = 1:n
+    indices = Array(1:(n-length(sep)))
+    for i = 1:length(sep)
         max_i = n + 1 - i
         toremove = sep[i]
         if toremove < max_i
             indices[toremove] = max_i
         end
-        rem_vertex!(g, toremove)
+        @debug rem_vertex!(g, toremove)
     end
     # catch the multiple parts created from the split
     split_parts = connected_components(g)
     # be careful to return indices which make sense in the original root graph
+    @debug "subgraph_nodes=$subgraph_nodes"
+    @debug "indices=$indices"
+    @debug "split_parts=$split_parts"
     return (
         map(node -> subgraph_nodes[node], sep),
         map(

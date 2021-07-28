@@ -158,14 +158,9 @@ function flowcutter(
     g::SimpleGraph, source::Int64,
     target::Int64,
     dist::Matrix{Int64}
-    )::Vector{Pair{Int64,Int64}}
-
-    add_vertex!(g)
-    add_vertex!(g)
+    )::Vector{Vector{Pair{Int64, Int64}}}
 
     n = nv(g)
-
-
 
     super_s = n - 1
     super_t = n
@@ -271,7 +266,5 @@ function flowcutter(
         @debug "TR=$T_reachable"
         @debug "--------------------------------"
     end
-    rem_vertex!(g, super_s)
-    rem_vertex!(g, super_t)
     return cuts
 end
