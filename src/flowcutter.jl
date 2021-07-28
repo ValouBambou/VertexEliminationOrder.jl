@@ -142,24 +142,30 @@ end
 
 
 """
-	flowcutter(g, source, target)
+	flowcutter(g, source, target, dist)
 Computes multiple cuts more and more balanced in a graph g.
 
 # Arguments
 -`g::SimpleGraph` the graph to consider.
 -`source::Int64` index of the source node.
 -`target::Int64` index of the target node.
+-`dist::Matrix{Int64}` matrix of distance between all nodes in graph (weight=1).
 
 # Return
 -`cuts::Vector{Vector{Pair{Int64, Int64}}}` all the cuts computed by flowcutter.
 """
-function flowcutter(g::SimpleGraph, source::Int64, target::Int64)
+function flowcutter(
+    g::SimpleGraph, source::Int64,
+    target::Int64,
+    dist::Matrix{Int64}
+    )::Vector{Pair{Int64,Int64}}
+
     add_vertex!(g)
     add_vertex!(g)
 
     n = nv(g)
 
-    dist = floyd_warshall_shortest_paths(g).dists
+
 
     super_s = n - 1
     super_t = n
