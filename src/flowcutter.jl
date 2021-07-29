@@ -1,5 +1,8 @@
-struct Cut
-    arcs::Vector{Pair{Int64,Int64}}, imbalance::Int64
+@with_kw struct Cut
+    arcs::Vector{Pair{Int64,Int64}},
+    imbalance::Int64,
+    expansion::Float64,
+    size::Int64 = length(arcs)
 end
 
 
@@ -222,6 +225,7 @@ function flowcutter(
                             (max(sum(S_reachable), n - sum(S_reachable)) - 1) /
                             n
                         ) - 1,
+                        length(cut_arcs) / (min(sum(S_reachable), n - sum(S_reachable)) - 1)
                     ),
                 )
 
@@ -258,6 +262,7 @@ function flowcutter(
                             (max(sum(T_reachable), n - sum(T_reachable)) - 1) /
                             n
                         ) - 1,
+                        length(cut_arcs) / (min(sum(T_reachable), n - sum(T_reachable)) - 1)
                     ),
                 )
 

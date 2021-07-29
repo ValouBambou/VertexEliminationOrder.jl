@@ -6,7 +6,8 @@ heuristic to form a separator. Then split the graph g with respect to the separa
 # Arguments
 - `g::SimpleGraph{Int64}`: the subgraph to run flowcutter.
 - `subgraph_nodes::Vector{Int64}`: a table where element at index i is corresponding label in the original root graph.
-
+- `max_imbalance::Float64 = 0.6` max imbalance to select cut from flowcutter result.
+- `max_nsample::Int64 = 20` max number of try to get a separator.
 # Return
 - `sep::Vector{Int64}`: the set of indices of the nodes in separator.
 - `split_parts::Array{Array{Int64,1},1}` several parts of the graph resulted from separation.
@@ -14,23 +15,52 @@ heuristic to form a separator. Then split the graph g with respect to the separa
 function separator!(
     g::SimpleGraph{Int64},
     subgraph_nodes::Vector{Int64},
+    max_imbalance::Float64 = 0.6,
+    max_nsample::Int64 = 20,
 )::Tuple{Vector{Int64},Array{Array{Int64,1},1}}
     @debug "------ separator! --------"
-    s, t = sample(subgraph_nodes, 2, replace = false)
 
-    # wrapper for flowcutter
+    # run flowcutter many times and collect all of these cuts
+    cuts::Vector{Cut} = []
     add_vertex!(g)
     add_vertex!(g)
+
     dist = floyd_warshall_shortest_paths(g).dists
-    cuts = flowcutter(g, s, t, dist)
+    for i in 1:max_nsample
+        s, t = sample(subgraph_nodes, 2, replace = false)
+        push!.([cuts], flowcutter(g, s, t, dist))
+    end
+
     n = nv(g)
     rem_vertex!(g, n)
     rem_vertex!(g, n - 1)
 
+    # find best size imbalance and expansion for cuts
+    minsize = typemax(Int64)
+    minimbalance = typemax(Int64)
+    minexpansion = typemax(Int64)
+    for c in cuts
+        size = c.size
+        imbalance = c.imbalance
+        expansion = c.expansion
+        if size < minsize
+            minsize = size
+        end
+        if imbalance < minimbalance
+            minimbalance = imbalance
+        end
+        if expansion < minexpansion
+            minexpansion = expansion
+        end
+    end
+    # remove dominated cuts and cuts with more than max_imbalance (=0.6)
+    filter!(
+        c -> ((c.size == minsize) || (c.imbalance == minimbalance)) && (c.imbalance < max_imbalance),
+        cuts
+    )
 
-    # 60% imbalance is like index = 40% of length(cuts) (as last cuts are close to 0% imbalance)
-    # TODO: improve this, probably not what we want
-    cut = cuts[findfirst(c -> c.imbalance <= 0.6, cuts)]
+    # select cut with 0.6 imbalance max
+    cut = cuts[findfirst(c -> c.expansion == minexpansion)]
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
     @debug "cut=$cut"
     @debug "sep=$sep"
