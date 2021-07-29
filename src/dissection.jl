@@ -31,7 +31,7 @@ function separator!(
     # 60% imbalance is like index = 40% of length(cuts) (as last cuts are close to 0% imbalance)
     # TODO: improve this, probably not what we want
     cut = cuts[findfirst(c -> c.imbalance <= 0.6, cuts)]
-    sep = unique(map(a -> sample([a.first, a.second]), cut))
+    sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
     @debug "cut=$cut"
     @debug "sep=$sep"
     n -= 2
