@@ -1,3 +1,8 @@
+struct Cut
+    arcs::Vector{Pair{Int64,Int64}}, imbalance::Int64
+end
+
+
 """
     forward_grow!(set, g, flow_matrix, capacity_matrix, reverse)
 Start a breadth first search in a graph g from nodes in set following only non
@@ -143,7 +148,8 @@ end
 
 """
 	flowcutter(g, source, target, dist)
-Computes multiple cuts more and more balanced in a graph g.
+Computes multiple cuts more and more balanced in a graph g. Need super target and
+sources created before.
 
 # Arguments
 -`g::SimpleGraph` the graph to consider.
@@ -152,21 +158,19 @@ Computes multiple cuts more and more balanced in a graph g.
 -`dist::Matrix{Int64}` matrix of distance between all nodes in graph (weight=1).
 
 # Return
--`cuts::Vector{Vector{Pair{Int64, Int64}}}` all the cuts computed by flowcutter.
+-`cuts::Vector{Cut}` all the cuts computed by flowcutter.
 """
 function flowcutter(
-    g::SimpleGraph, source::Int64,
+    g::SimpleGraph,
+    source::Int64,
     target::Int64,
-    dist::Matrix{Int64}
-    )::Vector{Vector{Pair{Int64, Int64}}}
+    dist::Matrix{Int64},
+)::Vector{Cut}
 
     n = nv(g)
 
     super_s = n - 1
     super_t = n
-
-    add_edge!(g, super_s, source)
-    add_edge!(g, super_t, target)
 
     flow_matrix = zeros(Int64, n, n)
     capacity_matrix = SparseMatrixCSC{Int64,Int64}(adjacency_matrix(g))
@@ -181,7 +185,7 @@ function flowcutter(
     S_reachable = copy(S)
     T_reachable = copy(T)
 
-    cuts::Vector{Vector{Pair{Int64,Int64}}} = []
+    cuts::Vector{Cut} = []
 
     forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
     forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
@@ -199,20 +203,30 @@ function flowcutter(
             forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
             forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
         else
-            cut::Vector{Pair{Int64,Int64}} = []
+            cut_arcs::Vector{Pair{Int64,Int64}} = []
             if sum(S_reachable) <= sum(T_reachable)
                 @debug "----- Enter in the source side cut section -----"
                 forward_grow!(S, g, flow_matrix, capacity_matrix)
                 # output source side cut edges
                 for e in edges(g)
                     if S_reachable[e.src] ⊻ S_reachable[e.dst]
-                        push!(cut, e.src => e.dst)
+                        push!(cut_arcs, e.src => e.dst)
                     end
                 end
-                push!(cuts, cut)
+                push!(
+                    cuts,
+                    Cut(
+                        cut_arcs,
+                        (
+                            2 *
+                            (max(sum(S_reachable), n - sum(S_reachable)) - 1) /
+                            n
+                        ) - 1,
+                    ),
+                )
 
                 x = piercing_node(
-                    cut,
+                    cut_arcs,
                     S_reachable,
                     T_reachable,
                     source,
@@ -232,13 +246,23 @@ function flowcutter(
 
                 for e in edges(g)
                     if T_reachable[e.src] ⊻ T_reachable[e.dst]
-                        push!(cut, e.src => e.dst)
+                        push!(cut_arcs, e.src => e.dst)
                     end
                 end
-                push!(cuts, cut)
+                push!(
+                    cuts,
+                    Cut(
+                        cut_arcs,
+                        (
+                            2 *
+                            (max(sum(T_reachable), n - sum(T_reachable)) - 1) /
+                            n
+                        ) - 1,
+                    ),
+                )
 
                 x = piercing_node(
-                    cut,
+                    cut_arcs,
                     T_reachable,
                     S_reachable,
                     target,

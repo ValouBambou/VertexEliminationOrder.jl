@@ -30,11 +30,11 @@ function separator!(
 
     # 60% imbalance is like index = 40% of length(cuts) (as last cuts are close to 0% imbalance)
     # TODO: improve this, probably not what we want
-    cut = cuts[trunc(Int64, 0.4 * length(cuts) + 1)]
+    cut = cuts[findfirst(c -> c.imbalance <= 0.6, cuts)]
     sep = unique(map(a -> sample([a.first, a.second]), cut))
     @debug "cut=$cut"
     @debug "sep=$sep"
-    n -=2
+    n -= 2
     @debug "number of nodes = $(nv(g))"
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
