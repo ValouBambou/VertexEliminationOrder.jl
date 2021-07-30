@@ -22,18 +22,18 @@ function separator!(
 
     # run flowcutter many times and collect all of these cuts
     cuts::Vector{Cut} = []
-    add_vertex!(g)
-    add_vertex!(g)
+    n = nv(g) + 2
 
     dist = floyd_warshall_shortest_paths(g).dists
     for i in 1:max_nsample
-        s, t = sample(subgraph_nodes, 2, replace = false)
-        push!.([cuts], flowcutter(g, s, t, dist))
+        add_vertex!(g)
+        add_vertex!(g)
+        s, t = sample(1:length(subgraph_nodes), 2, replace = false)
+        push!.([cuts], flowcutter!(g, s, t, dist))
+        rem_vertex!(g, n)
+        rem_vertex!(g, n - 1)
     end
 
-    n = nv(g)
-    rem_vertex!(g, n)
-    rem_vertex!(g, n - 1)
 
     # find best size imbalance and expansion for cuts
     minsize = typemax(Int64)
@@ -60,7 +60,7 @@ function separator!(
     )
 
     # select cut with 0.6 imbalance max
-    cut = cuts[findfirst(c -> c.expansion == minexpansion)]
+    cut = cuts[findfirst(c -> c.expansion == minexpansion, cuts)]
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
     @debug "cut=$cut"
     @debug "sep=$sep"
@@ -79,10 +79,11 @@ function separator!(
     end
     # catch the multiple parts created from the split
     split_parts = connected_components(g)
-    # be careful to return indices which make sense in the original root graph
+
     @debug "subgraph_nodes=$subgraph_nodes"
     @debug "indices=$indices"
     @debug "split_parts=$split_parts"
+    # be careful to return indices which make sense in the original root graph
     return (
         map(node -> subgraph_nodes[node], sep),
         map(

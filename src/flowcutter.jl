@@ -1,7 +1,7 @@
 @with_kw struct Cut
-    arcs::Vector{Pair{Int64,Int64}},
-    imbalance::Int64,
-    expansion::Float64,
+    arcs::Vector{Pair{Int64,Int64}}
+    imbalance::Float64
+    expansion::Float64
     size::Int64 = length(arcs)
 end
 
@@ -150,7 +150,7 @@ end
 
 
 """
-	flowcutter(g, source, target, dist)
+	flowcutter!(g, source, target, dist)
 Computes multiple cuts more and more balanced in a graph g. Need super target and
 sources created before.
 
@@ -163,7 +163,7 @@ sources created before.
 # Return
 -`cuts::Vector{Cut}` all the cuts computed by flowcutter.
 """
-function flowcutter(
+function flowcutter!(
     g::SimpleGraph,
     source::Int64,
     target::Int64,
@@ -174,6 +174,10 @@ function flowcutter(
 
     super_s = n - 1
     super_t = n
+
+    add_edge!(g, super_s, source)
+    add_edge!(g, target, super_t)
+
 
     flow_matrix = zeros(Int64, n, n)
     capacity_matrix = SparseMatrixCSC{Int64,Int64}(adjacency_matrix(g))
@@ -200,7 +204,7 @@ function flowcutter(
         @debug "TR=$T_reachable"
         if any(S_reachable .& T_reachable)
             @debug "----- Enter in the augment flow section -----"
-            augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
+            @debug augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
             S_reachable = copy(S)
             T_reachable = copy(T)
             forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
@@ -219,13 +223,13 @@ function flowcutter(
                 push!(
                     cuts,
                     Cut(
-                        cut_arcs,
-                        (
+                        arcs = cut_arcs,
+                        imbalance = (
                             2 *
                             (max(sum(S_reachable), n - sum(S_reachable)) - 1) /
                             n
                         ) - 1,
-                        length(cut_arcs) / (min(sum(S_reachable), n - sum(S_reachable)) - 1)
+                        expansion = length(cut_arcs) / (min(sum(S_reachable), n - sum(S_reachable)) - 1)
                     ),
                 )
 
@@ -256,13 +260,13 @@ function flowcutter(
                 push!(
                     cuts,
                     Cut(
-                        cut_arcs,
-                        (
+                        arcs = cut_arcs,
+                        imbalance = (
                             2 *
                             (max(sum(T_reachable), n - sum(T_reachable)) - 1) /
                             n
                         ) - 1,
-                        length(cut_arcs) / (min(sum(T_reachable), n - sum(T_reachable)) - 1)
+                        expansion = length(cut_arcs) / (min(sum(T_reachable), n - sum(T_reachable)) - 1)
                     ),
                 )
 

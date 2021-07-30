@@ -10,7 +10,7 @@ include("heuristics.jl")
 include("flowcutter.jl")
 include("dissection.jl")
 
-export minfill!, minwidth!, augment_flow!, forward_grow!, piercing_node, flowcutter, nested_dissection
+export minfill!, minwidth!, augment_flow!, forward_grow!, piercing_node, flowcutter!, nested_dissection
 
 
 end
