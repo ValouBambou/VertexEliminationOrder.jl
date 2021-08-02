@@ -38,7 +38,7 @@ forward_grow!(SR, G, flow, cap)
 TR = falses(5); TR[1] = true
 expected_TR = falses(5); expected_TR[[1, 3, 4, 5]] .= true
 @info "Testing forward_grow! (backward) with house graph"
-forward_grow!(TR, G, flow, cap, true)
+forward_grow!(TR, G, flow, cap)
 @test TR == expected_TR
 
 # test piercing_node

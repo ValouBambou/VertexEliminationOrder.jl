@@ -10,15 +10,14 @@ end
     forward_grow!(set, g, flow_matrix, capacity_matrix, reverse)
 Start a breadth first search in a graph g from nodes in set following only non
 satured arcs. This function update the set and add to it every nodes that can be
-reached from the nodes in set. Can be reverse to find the nodes which can reach
-those in the set.
+reached from the nodes in set. In the context of undirected graphs this is the same
+as backward growing.
 
 # Arguments
 - `set::BitVector` the set of nodes to consider.
 - `g::SimpleGraph` the graph to explore.
 - `capacity_matrix::SparseMatrixCSC{Int64, Int64}` capacities of arcs.
 - `flow_matrix::Array{Int64, 2}` current flow of arcs.
-- `reverse::Bool` if true it does backward growing.
 
 # Return
 - `nothing` (only set is modified)
@@ -28,12 +27,7 @@ function forward_grow!(
     g::SimpleGraph,
     flow_matrix::Array{Int64,2},
     capacity_matrix::SparseMatrixCSC{Int64,Int64},
-    reverse::Bool = false,
 )::Nothing
-    # in case of backward growing we swap the flow
-    if reverse
-        flow_matrix = -1 .* flow_matrix
-    end
     # init the breadth first search algorithm
     q = Queue{Int64}()
     enqueue!.([q], findall(x -> x > 0, set))
@@ -195,7 +189,7 @@ function flowcutter!(
     cuts::Vector{Cut} = []
 
     forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
-    forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
+    forward_grow!(T_reachable, g, flow_matrix, capacity_matrix)
 
     while (!any(S .& T)) && (sum(S .| T) < n)
         @debug "S=$S"
@@ -208,7 +202,7 @@ function flowcutter!(
             S_reachable = copy(S)
             T_reachable = copy(T)
             forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
-            forward_grow!(T_reachable, g, flow_matrix, capacity_matrix, true)
+            forward_grow!(T_reachable, g, flow_matrix, capacity_matrix)
         else
             cut_arcs::Vector{Pair{Int64,Int64}} = []
             if sum(S_reachable) <= sum(T_reachable)
@@ -249,7 +243,7 @@ function flowcutter!(
                 forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
             else
                 @debug "----- Enter in the target side cut section -----"
-                forward_grow!(T, g, flow_matrix, capacity_matrix, true)
+                forward_grow!(T, g, flow_matrix, capacity_matrix)
                 # output target side cut edges
 
                 for e in edges(g)
@@ -288,7 +282,6 @@ function flowcutter!(
                     g,
                     flow_matrix,
                     capacity_matrix,
-                    true,
                 )
             end
         end
