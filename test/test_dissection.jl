@@ -12,10 +12,12 @@ add_edge!(G, 5, 9)
 ENV["JULIA_DEBUG"]=VertexEliminationOrder
 nodes = [j for j in 1:9]
 @info "testing tree_order!"
-@test tree_order!(G, nodes) == [9, 8, 7, 6, 4, 5, 3, 2, 1]
+# we expect 4, 6, 7, 8, 9 first  then 3,5 then 1, 2 (roder in each block don't matter)
+@test tree_order!(G, nodes) == [4, 6, 7, 8, 9, 3, 5, 1, 2]
+# after this function no edges in G
+@test ne(G) == 0
 
-
-for i in 1:12 add_vertex!(G) end
+for i in 1:3 add_vertex!(G) end
 # 1 to 5 is a clique
 for i in 1:5
     for j in (i+1):5

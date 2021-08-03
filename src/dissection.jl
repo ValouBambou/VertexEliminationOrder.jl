@@ -3,26 +3,30 @@
 Computes the optimal elimination order for nodes in a tree. Graph is modified.
 """
 function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{Int64}
+    @debug "tree_order! args : graph = $graph, nodes = $nodes"
     n = length(nodes)
-    eliminated = 0
-    indices = [j for j in 1:n]
+    eliminated = 1
+    indices = collect(1:n)
     order = zeros(Int64, n)
-    while eliminated < n
+    leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:n)
+    while eliminated <= n
+        parents = unique(map(it -> neighbors(graph, it)[1], leafs))
         nnodes = nv(graph)
-        leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:nnodes)
         nleafs = length(leafs)
-        for j in 1:nleafs
-            maxi = nnodes + 1 - j
-            rm = leafs[nleafs + 1 - j]
-            order[eliminated + j] = nodes[indices[rm]]
-            if rm < maxi
-                indices[rm] = maxi
-                indices[maxi] = rm
+        for rm in leafs
+            order[eliminated] = nodes[rm]
+            eliminated += 1
+            if ne(graph) != 0
+                rem_edge!(graph, rm, neighbors(graph, rm)[1])
             end
-            rem_vertex!(graph, rm)
         end
-        eliminated += nleafs
+        # new leafs are parents with 1 neighbors
+        leafs = filter(
+            node -> length(neighbors(graph, node)) == 1,
+            parents
+        )
     end
+    @debug "tree_order! return : $order"
     return order
 end
 
@@ -143,9 +147,10 @@ function nested_dissection(g::SimpleGraph{Int64})
     order = zeros(Int64, n)
     treewidth = 0
     q = Queue{Vector{Int64}}()
-    enqueue!(q, Vector(1:n))
+    enqueue!(q, collect(1:n))
     i = n
     while !isempty(q)
+        @debug "order is $order"
         subgraph_nodes = dequeue!(q)
         graph = induced_subgraph(g, subgraph_nodes)[1]
         # if graph is a tree or complete we can stop
@@ -167,6 +172,8 @@ function nested_dissection(g::SimpleGraph{Int64})
 
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes)
+        @debug "separator is $sep"
+
 
         # update order and treewidth
         k = length(sep)

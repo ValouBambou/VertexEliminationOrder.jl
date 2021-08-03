@@ -127,12 +127,9 @@ function piercing_node(
     dist::Array{Int64,2},
 )::Int64
     # first heuristic
-    @debug "----Piercing node -----"
     best_nodes = .~(to_increase .| to_avoid)
     nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
     res = findfirst(p -> best_nodes[p], nodes)
-    @debug "best_nodes = $best_nodes"
-    @debug "nodes=$nodes"
     res = if isnothing(res)
         # second heuristic
         findmax(map(p -> dist[p, avoid_node] - dist[increase_node, p], nodes))[2]
@@ -192,13 +189,8 @@ function flowcutter!(
     forward_grow!(T_reachable, g, flow_matrix, capacity_matrix)
 
     while (!any(S .& T)) && (sum(S .| T) < n)
-        @debug "S=$S"
-        @debug "T=$T"
-        @debug "SR=$S_reachable"
-        @debug "TR=$T_reachable"
         if any(S_reachable .& T_reachable)
-            @debug "----- Enter in the augment flow section -----"
-            @debug augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
+            augment_flow!(flow_matrix, capacity_matrix, g, super_s, super_t)
             S_reachable = copy(S)
             T_reachable = copy(T)
             forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
@@ -206,7 +198,6 @@ function flowcutter!(
         else
             cut_arcs::Vector{Pair{Int64,Int64}} = []
             if sum(S_reachable) <= sum(T_reachable)
-                @debug "----- Enter in the source side cut section -----"
                 forward_grow!(S, g, flow_matrix, capacity_matrix)
                 # output source side cut edges
                 for e in edges(g)
@@ -242,7 +233,6 @@ function flowcutter!(
 
                 forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
             else
-                @debug "----- Enter in the target side cut section -----"
                 forward_grow!(T, g, flow_matrix, capacity_matrix)
                 # output target side cut edges
 
@@ -285,12 +275,6 @@ function flowcutter!(
                 )
             end
         end
-        @debug "------ In the End of Loop ------"
-        @debug "S=$S"
-        @debug "T=$T"
-        @debug "SR=$S_reachable"
-        @debug "TR=$T_reachable"
-        @debug "--------------------------------"
     end
     return cuts
 end
