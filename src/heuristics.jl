@@ -1,3 +1,5 @@
+using LightGraphs
+
 """
     count_added_edges_elim(g, v)
 Computes the number of edges that will be added to the graph if we choose to

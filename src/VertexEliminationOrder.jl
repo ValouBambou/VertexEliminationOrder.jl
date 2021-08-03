@@ -1,10 +1,6 @@
 module VertexEliminationOrder
 
-using LightGraphs
-using Parameters
-using DataStructures
-using StatsBase
-using SparseArrays
+
 
 include("heuristics.jl")
 include("flowcutter.jl")

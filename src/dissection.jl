@@ -1,3 +1,8 @@
+using LightGraphs
+using DataStructures
+using StatsBase
+
+
 """
     tree_order!(graph, nodes)
 Computes the optimal elimination order for nodes in a tree. Graph is modified.
@@ -8,23 +13,35 @@ function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{In
     eliminated = 1
     indices = collect(1:n)
     order = zeros(Int64, n)
+    @debug "lol"
     leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:n)
-    while eliminated <= n
+
+    # trick to get the last node
+    lastnode = sum(nodes)
+    @debug "lolmdr"
+    while eliminated < n
+        @debug "loli"
         parents = unique(map(it -> neighbors(graph, it)[1], leafs))
+        @debug "loloo"
         nnodes = nv(graph)
         nleafs = length(leafs)
         for rm in leafs
             order[eliminated] = nodes[rm]
-            eliminated += 1
+            lastnode -= nodes[rm]
             if ne(graph) != 0
                 rem_edge!(graph, rm, neighbors(graph, rm)[1])
             end
+            eliminated += 1
         end
         # new leafs are parents with 1 neighbors
         leafs = filter(
             node -> length(neighbors(graph, node)) == 1,
             parents
         )
+    end
+    # fix last node have no neighbor because all edges are deleted
+    if order[n] == 0
+        order[n] = lastnode
     end
     @debug "tree_order! return : $order"
     return order
@@ -50,8 +67,8 @@ flowcutter. Parameter max_nsample define the number of call to flowcutter.
 function separator!(
     g::SimpleGraph{Int64},
     subgraph_nodes::Vector{Int64},
-    max_imbalance::Float64 = 0.6,
-    max_nsample::Int64 = 20,
+    max_imbalance::Float64=0.6,
+    max_nsample::Int64=20,
 )::Tuple{Vector{Int64},Array{Array{Int64,1},1}}
     @debug "------ separator! --------"
 
@@ -63,7 +80,7 @@ function separator!(
     for i in 1:max_nsample
         add_vertex!(g)
         add_vertex!(g)
-        s, t = sample(1:length(subgraph_nodes), 2, replace = false)
+        s, t = sample(1:length(subgraph_nodes), 2, replace=false)
         push!.([cuts], flowcutter!(g, s, t, dist))
         rem_vertex!(g, n)
         rem_vertex!(g, n - 1)
@@ -102,7 +119,7 @@ function separator!(
     n -= 2
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
-    indices = Array(1:(n-length(sep)))
+    indices = Array(1:(n - length(sep)))
     for i = 1:length(sep)
         max_i = n + 1 - i
         toremove = sep[i]
@@ -159,25 +176,25 @@ function nested_dissection(g::SimpleGraph{Int64})
         if nedges == n * (n - 1) / 2
             @debug "graph is complete"
             treewidth = max(treewidth, n - 1)
-            order[(i-n+1):i] .= subgraph_nodes
+            order[(i - n + 1):i] .= subgraph_nodes
             i -= n
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
             treewidth = max(treewidth, 1)
-            order[(i-n+1):i] .= tree_order!(graph, subgraph_nodes)
+            order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
             continue
         end
 
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes)
-        @debug "separator is $sep"
+        @debug "separator! returns $sep $toqueue"
 
 
         # update order and treewidth
         k = length(sep)
-        order[(i-k+1):i] = sep
+        order[(i - k + 1):i] = sep
         i -= k
         treewidth = max(treewidth, k)
 
