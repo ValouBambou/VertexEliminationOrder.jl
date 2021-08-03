@@ -221,7 +221,7 @@ function flowcutter!(
                         imbalance = (
                             2 *
                             (max(sum(S_reachable), n - sum(S_reachable)) - 1) /
-                            n
+                            (n - 2)
                         ) - 1,
                         expansion = length(cut_arcs) / (min(sum(S_reachable), n - sum(S_reachable)) - 1)
                     ),
@@ -258,7 +258,7 @@ function flowcutter!(
                         imbalance = (
                             2 *
                             (max(sum(T_reachable), n - sum(T_reachable)) - 1) /
-                            n
+                            (n - 2)
                         ) - 1,
                         expansion = length(cut_arcs) / (min(sum(T_reachable), n - sum(T_reachable)) - 1)
                     ),
