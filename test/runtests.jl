@@ -1,7 +1,5 @@
 using VertexEliminationOrder
 using Test
-using LightGraphs
-using SparseArrays
 
 
 @testset "VertexEliminationOrder.jl" begin

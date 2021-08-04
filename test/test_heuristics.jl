@@ -1,3 +1,7 @@
+using VertexEliminationOrder
+using Test
+using LightGraphs
+
 G = smallgraph("house")
 @info "Testing minwidth with house graph"
 @test minwidth!(G) == ([1, 5, 4, 3, 2], 2)

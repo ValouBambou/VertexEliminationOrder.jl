@@ -5,7 +5,14 @@ using StatsBase
 
 """
     tree_order!(graph, nodes)
-Computes the optimal elimination order for nodes in a tree. Graph is modified.
+Computes the optimal elimination order for nodes in a tree. Graph is modified, all its edges are deleted.
+
+# Arguments
+- `graph::SimpleGraph{Int64}` the subtree to consider.
+- `nodes::Vector{Int64}` indices of nodes in the root greaph.
+
+# Return
+- `order::Vector{Int64}` vertex elimination order (indices in the root graph) to get treewidth of 1 in the subtree.
 """
 function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{Int64}
     @debug "tree_order! args : graph = $graph, nodes = $nodes"

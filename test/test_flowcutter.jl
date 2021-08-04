@@ -1,3 +1,9 @@
+using VertexEliminationOrder
+using Test
+using LightGraphs
+using SparseArrays
+
+
 # test augment_flow!
 G = smallgraph("house")
 n = nv(G)

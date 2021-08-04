@@ -1,13 +1,18 @@
+using VertexEliminationOrder
+using Test
+using LightGraphs
+
+ENV["JULIA_DEBUG"]=VertexEliminationOrder
+
+
 # unit test order_tree!
-G = SimpleGraph{Int64}()
-for i in 1:7 add_vertex!(G) end
+G = SimpleGraph{Int64}(7)
 add_edge!(G, 1, 2)
 add_edge!(G, 1, 3)
 add_edge!(G, 3, 4)
 add_edge!(G, 3, 5)
 add_edge!(G, 4, 6)
 add_edge!(G, 4, 7)
-ENV["JULIA_DEBUG"]=VertexEliminationOrder
 nodes = [6, 7, 8, 9, 10, 11, 12]
 @info "testing tree_order!"
 # we expect 4, 6, 7, 8, 9 first  then 3,5 then 1, 2 (roder in each block don't matter)
@@ -15,14 +20,14 @@ nodes = [6, 7, 8, 9, 10, 11, 12]
 # after this function no edges in G
 @test ne(G) == 0
 
-for i in 1:5 add_vertex!(G) end
+add_vertices!(G, 5)
 # 1 to 5 is a clique
 for i in 1:5
     for j in (i+1):5
         add_edge!(G, i, j)
     end
 end
-# 6 and 7 are midlle nodes
+# 6 and 7 are midle nodes
 add_edge!(G, 5, 6)
 add_edge!(G, 6, 7)
 add_edge!(G, 6, 8)
