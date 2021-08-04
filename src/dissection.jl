@@ -20,16 +20,12 @@ function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{In
     eliminated = 1
     indices = collect(1:n)
     order = zeros(Int64, n)
-    @debug "lol"
     leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:n)
 
     # trick to get the last node
     lastnode = sum(nodes)
-    @debug "lolmdr"
     while eliminated < n
-        @debug "loli"
         parents = unique(map(it -> neighbors(graph, it)[1], leafs))
-        @debug "loloo"
         nnodes = nv(graph)
         nleafs = length(leafs)
         for rm in leafs
@@ -94,10 +90,9 @@ function separator!(
     end
 
 
-    # find best size imbalance and expansion for cuts
+    # find best size imbalance for cuts
     minsize = typemax(Int64)
     minimbalance = typemax(Int64)
-    minexpansion = typemax(Int64)
     for c in cuts
         size = c.size
         imbalance = c.imbalance
@@ -108,9 +103,6 @@ function separator!(
         if imbalance < minimbalance
             minimbalance = imbalance
         end
-        if expansion < minexpansion
-            minexpansion = expansion
-        end
     end
     # remove dominated cuts and cuts with more than max_imbalance (=0.6)
     filter!(
@@ -118,8 +110,8 @@ function separator!(
         cuts
     )
 
-    # select cut with 0.6 imbalance max
-    cut = cuts[findfirst(c -> c.expansion == minexpansion, cuts)]
+    # select cut with min expansion
+    cut = findmin(c -> c.expansion, cuts)[2]
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
     @debug "cut=$cut"
     @debug "sep=$sep"
@@ -185,12 +177,14 @@ function nested_dissection(g::SimpleGraph{Int64})
             treewidth = max(treewidth, n - 1)
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
+            @debug "tw is $treewidth"
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
             treewidth = max(treewidth, 1)
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
+            @debug "tw is $treewidth"
             continue
         end
 
@@ -204,6 +198,7 @@ function nested_dissection(g::SimpleGraph{Int64})
         order[(i - k + 1):i] = sep
         i -= k
         treewidth = max(treewidth, k)
+        @debug "tw is $treewidth"
 
         # add next subgraphs to the queue
         enqueue!.([q], toqueue)
