@@ -26,32 +26,6 @@ function count_added_edges_elim(g::SimpleGraph{Int64}, v::Int64)::Int64
     return count
 end
 
-"""
-    connect_neighbors!(g, v)
-Connect neighbors of v (in graph g) together if they are not already connected.
-
-# Arguments
-- `g::SimpleGraph{Int64}` the graph to consider.
-- `v::Int64` the vertex to make simplicial.
-
-# Return
-- `change::Bool` true if edge is created false otherwise.
-"""
-function connect_neighbors!(g::SimpleGraph{Int64}, v::Int64)::Bool
-    ns = neighbors(g, v)
-    len = length(ns)
-    change = false
-    for i = 1:(len-1)
-        for j = (i+1):len
-            if !has_edge(g, ns[i], ns[j])
-                add_edge!(g, ns[i], ns[j])
-                change = true
-            end
-        end
-    end
-    return change
-end
-
 
 """
     minfill!(g)

@@ -4,23 +4,11 @@ using LightGraphs
 
 ENV["JULIA_DEBUG"]=VertexEliminationOrder
 
+using LightGraphs
+using Test
+using VertexEliminationOrder
 
-# unit test order_tree!
-G = SimpleGraph{Int64}(7)
-add_edge!(G, 1, 2)
-add_edge!(G, 1, 3)
-add_edge!(G, 3, 4)
-add_edge!(G, 3, 5)
-add_edge!(G, 4, 6)
-add_edge!(G, 4, 7)
-nodes = [6, 7, 8, 9, 10, 11, 12]
-@info "testing tree_order!"
-# we expect 4, 6, 7, 8, 9 first  then 3,5 then 1, 2 (roder in each block don't matter)
-@test tree_order!(G, nodes) == [7, 10, 11, 12, 6, 9, 8]
-# after this function no edges in G
-@test ne(G) == 0
-
-add_vertices!(G, 5)
+G = SimpleGraph{Int64}(12)
 # 1 to 5 is a clique
 for i in 1:5
     for j in (i+1):5
@@ -38,7 +26,7 @@ add_edge!(G, 9, 11)
 add_edge!(G, 9, 12)
 
 @info "Testing nested_dissection with custom graph"
-res = nested_dissection(G)
+res = nested_dissection!(G)
 @info res
 # 6 should be separator but t seems that it depends on the random s and t
 @test res[2] == 4

@@ -4,54 +4,6 @@ using StatsBase
 
 
 """
-    tree_order!(graph, nodes)
-Computes the optimal elimination order for nodes in a tree. Graph is modified, all its edges are deleted.
-
-# Arguments
-- `graph::SimpleGraph{Int64}` the subtree to consider.
-- `nodes::Vector{Int64}` indices of nodes in the root greaph.
-
-# Return
-- `order::Vector{Int64}` vertex elimination order (indices in the root graph) to get treewidth of 1 in the subtree.
-"""
-function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{Int64}
-    @debug "tree_order! args : graph = $graph, nodes = $nodes"
-    n = length(nodes)
-    eliminated = 1
-    indices = collect(1:n)
-    order = zeros(Int64, n)
-    leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:n)
-
-    # trick to get the last node
-    lastnode = sum(nodes)
-    while eliminated < n
-        parents = unique(map(it -> neighbors(graph, it)[1], leafs))
-        nnodes = nv(graph)
-        nleafs = length(leafs)
-        for rm in leafs
-            order[eliminated] = nodes[rm]
-            lastnode -= nodes[rm]
-            if ne(graph) != 0
-                rem_edge!(graph, rm, neighbors(graph, rm)[1])
-            end
-            eliminated += 1
-        end
-        # new leafs are parents with 1 neighbors
-        leafs = filter(
-            node -> length(neighbors(graph, node)) == 1,
-            parents
-        )
-    end
-    # fix last node have no neighbor because all edges are deleted
-    if order[n] == 0
-        order[n] = lastnode
-    end
-    @debug "tree_order! return : $order"
-    return order
-end
-
-
-"""
     separator!(g, subgraph_nodes, max_imbalance=0.6, max_nsample=20)
 Call flowcutter (with s and t random) on g and pick nodes at random in the cut matching the 60% imbalance
 heuristic to form a separator. Then split the graph g with respect to the separator.
@@ -146,7 +98,7 @@ end
 
 
 """
-    nested_dissection(g)
+    nested_dissection!(g)
 Computes an approximation of the upper bound of the treewidth of the graph g and
 an order for elimination using the nested dissection and the flow cutter algorithm.
 
@@ -158,11 +110,11 @@ an order for elimination using the nested dissection and the flow cutter algorit
 - `order::Vector{Int64}` an array of vertices index.
 - `treewidth::Int64` the approximation of treewidth.
 """
-function nested_dissection(g::SimpleGraph{Int64})
+function nested_dissection!(g::SimpleGraph{Int64})
     n = nv(g)
     order = zeros(Int64, n)
-    treewidth = 0
     q = Queue{Vector{Int64}}()
+    sep::Vector{Int64} = []
     enqueue!(q, collect(1:n))
     i = n
     while !isempty(q)
@@ -174,17 +126,14 @@ function nested_dissection(g::SimpleGraph{Int64})
         nedges = ne(graph)
         if nedges == n * (n - 1) / 2
             @debug "graph is complete"
-            treewidth = max(treewidth, n - 1)
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
-            @debug "tw is $treewidth"
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
             treewidth = max(treewidth, 1)
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
-            @debug "tw is $treewidth"
             continue
         end
 
@@ -197,11 +146,10 @@ function nested_dissection(g::SimpleGraph{Int64})
         k = length(sep)
         order[(i - k + 1):i] = sep
         i -= k
-        treewidth = max(treewidth, k)
-        @debug "tw is $treewidth"
 
         # add next subgraphs to the queue
         enqueue!.([q], toqueue)
     end
+    treewidth = treewidth_by_elimination!(g, order)
     return (order, treewidth)
 end

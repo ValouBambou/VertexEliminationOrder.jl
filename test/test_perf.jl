@@ -30,4 +30,4 @@ ENV["JULIA_DEBUG"]=VertexEliminationOrder
 
 
 g = graph_from_gr(graph_file)
-@info nested_dissection(g)
+@info nested_dissection!(g)
