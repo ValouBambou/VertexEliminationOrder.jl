@@ -51,25 +51,19 @@ julia> minfill!(G)
 function minfill!(g::SimpleGraph{Int64})
     nvertices = nv(g)
     order = zeros(Int64, nvertices)
-    labels = [i for i = 1:nvertices]
+    labels = collect(1:nvertices)
     treewidth = 0
     for i = 1:nvertices
         # find the vertex which add the less edges after elimination
         toremove = argmin(map(v -> count_added_edges_elim(g, v), vertices(g)))
         order[i] = labels[toremove]
 
-        # keep track of index with the future remove
-        max_index = nvertices + 1 - i
-        if toremove < max_index
-            labels[toremove] = max_index
-        end
 
         # compute the treewidth of the current decomposition
         treewidth = max(treewidth, degree(g, toremove))
 
         # remove the vertex by making it simplicial
-        connect_neighbors!(g, toremove)
-        rem_vertex!(g, toremove)
+        eliminate!(g, toremove, labels)
     end
     return (order, treewidth)
 end
@@ -98,25 +92,18 @@ julia> minwidth!(G)
 function minwidth!(g::SimpleGraph{Int64})
     nvertices = nv(g)
     order = zeros(Int64, nvertices)
-    labels = [i for i = 1:nvertices]
+    labels = collect(1:nvertices)
     treewidth = 0
     for i = 1:nvertices
         # find the vertex whith the minimum degree
         toremove = argmin(degree(g))
         order[i] = labels[toremove]
 
-        # keep track of index with the future remove
-        max_index = nvertices + 1 - i
-        if toremove < max_index
-            labels[toremove] = max_index
-        end
-
         # compute the treewidth of the current decomposition
         treewidth = max(treewidth, degree(g, toremove))
 
         # remove the vertex by making it simplicial
-        connect_neighbors!(g, toremove)
-        rem_vertex!(g, toremove)
+        eliminate!(g, toremove, labels)
     end
     return (order, treewidth)
 end

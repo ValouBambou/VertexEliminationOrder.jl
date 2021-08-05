@@ -1,29 +1,30 @@
 using LightGraphs
 
 """
-    connect_neighbors!(g, v)
-Connect neighbors of v (in graph g) together if they are not already connected.
+    eliminate!(g::SimpleGraph{Int64}, v::Int64, labels)::Nothing
+Connect neighbors of v (in graph g) together if they are not already connected, delete v
+and update the labels array. Labels is pop and element v updated.
 
 # Arguments
 - `g::SimpleGraph{Int64}` the graph to consider.
-- `v::Int64` the vertex to make simplicial.
+- `v::Int64` the vertex to eliminate.
+- `labels::Vector{Int64}` labels to keep track of nodes id in original graph before elimination.
 
 # Return
-- `change::Bool` true if edge is created false otherwise.
+- Nothing.
 """
-function connect_neighbors!(g::SimpleGraph{Int64}, v::Int64)::Bool
+function eliminate!(g::SimpleGraph{Int64}, v::Int64, labels::Vector{Int64})::Nothing
     ns = neighbors(g, v)
     len = length(ns)
-    change = false
     for i = 1:(len-1)
         for j = (i+1):len
-            if !has_edge(g, ns[i], ns[j])
-                add_edge!(g, ns[i], ns[j])
-                change = true
-            end
+            add_edge!(g, ns[i], ns[j])
         end
     end
-    return change
+    rem_vertex!(g, v)
+    labels[v] = labels[end]
+    pop!(labels)
+    nothing
 end
 
 """
@@ -40,18 +41,11 @@ Computes the treewidth by eliminating in order vertices of the graph and keep tr
 function treewidth_by_elimination!(g::SimpleGraph{Int64}, order::Vector{Int64})::Int64
     treewidth = 0
     n = nv(g)
-    indices = collect(1:n)
-    for i in 1:n
-        max_index = n + 1 - i
-        toremove = order[i]
-        index_rm = indices[toremove]
-        indices[max_index] = index_rm
-
-        
-        treewidth = max(treewidth, degree(g, index_rm))
-
-        connect_neighbors!(g, index_rm)
-        rem_vertex!(g, index_rm)
+    labels = collect(1:n)
+    for rm_origin_id in order
+        toremove = findfirst(id -> id == rm_origin_id, labels)
+        treewidth = max(treewidth, degree(g, toremove))
+        eliminate!(g, toremove, labels)
     end
     return treewidth
 end
@@ -72,36 +66,30 @@ function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{In
     @debug "tree_order! args : graph = $graph, nodes = $nodes"
     n = length(nodes)
     eliminated = 1
-    original_to_cur_indices = collect(1:n) # convert old index to current index in graph
     order = zeros(Int64, n)
-    leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:n) # always contains numbers in 1:n
-    max_index = n
+    leafs = filter(node -> length(neighbors(graph, node)) == 1, 1:n)
 
-    while nv(graph) > 1
-        parents = unique(map(it -> neighbors(graph, original_to_cur_indices[it])[1], leafs))
-        nnodes = nv(graph)
-        nleafs = length(leafs)
-        for rm in leafs # rm is always in 1:n
-            order[eliminated] = nodes[rm] # fill order with root graph nodes id
-            # index badness to keep track of correct nodes
-            index_rm = original_to_cur_indices[rm]
-            original_to_cur_indices[max_index] = index_rm
-
-            rem_vertex!(graph, index_rm)
+    # trick to get the last node
+    lastnode = sum(nodes)
+    while eliminated < n
+        parents = unique(map(it -> neighbors(graph, it)[1], leafs))
+        for rm in leafs
+            order[eliminated] = nodes[rm]
+            lastnode -= nodes[rm]
+            if ne(graph) != 0
+                rem_edge!(graph, rm, neighbors(graph, rm)[1])
+            end
             eliminated += 1
-            max_index -= 1
         end
         # new leafs are parents with 1 neighbors
         leafs = filter(
-            node -> length(neighbors(graph, original_to_cur_indices[node])) == 1,
+            node -> length(neighbors(graph, node)) == 1,
             parents
         )
     end
-    println("mdr")
-    if nv(graph) == 1
-        # rem last vertex (which has no neighbors)
-        order[n] = nodes[old_indices[1]]
-        rem_vertex!(graph, 1)
+    # fix last node have no neighbor because all edges are deleted
+    if order[n] == 0
+        order[n] = lastnode
     end
     @debug "tree_order! return : $order"
     return order

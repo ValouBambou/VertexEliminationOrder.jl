@@ -3,6 +3,9 @@ using LightGraphs
 using Test
 using Random
 
+ENV["JULIA_DEBUG"]=VertexEliminationOrder
+
+
 G =  smallgraph("house")
 @info "test treewidth of house"
 @test treewidth_by_elimination!(G, collect(1:5)) == 2
@@ -19,14 +22,15 @@ add_edge!(G, 3, 5)
 @test nv(G) == 0
 
 # complete graph
-G = SimpleGraph{Int64}(100)
-for i in 1:99
-    for j in (i + 1):100
+n = 30
+G = SimpleGraph{Int64}(n)
+for i in 1:(n - 1)
+    for j in (i + 1):n
         add_edge!(G, i, j)
     end
 end
 @info "test treewidth of complete graph"
-@test treewidth_by_elimination!(G, shuffle(collect(1:100))) == 99
+@test treewidth_by_elimination!(G, shuffle(collect(1:n))) == n - 1
 @test nv(G) == 0
 
 # unit test order_tree!
@@ -44,7 +48,6 @@ nodes = [6, 7, 8, 9, 10, 11, 12, 23, 34, 45]
 @info "testing tree_order!"
 # we expect 7, 10, 11, 12, 34, 45 first (leafs) then 6, 9 then 8 (order in each block don't matter)
 res = tree_order!(G, nodes)
-print("lol $res")
-@test  res == [7, 10, 11, 34, 45, 6, 23, 9, 12, 8]
-# after this function G is empty
-@test nv(G) == 0
+@test  res == [7, 10, 11, 34, 45, 6, 23, 8, 12, 9]
+# after this function G has no eddges
+@test ne(G) == 0
