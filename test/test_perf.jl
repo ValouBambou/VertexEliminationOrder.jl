@@ -1,5 +1,6 @@
 using LightGraphs
 using VertexEliminationOrder
+using Test
 
 
 """
@@ -30,4 +31,6 @@ ENV["JULIA_DEBUG"]=VertexEliminationOrder
 
 
 g = graph_from_gr(graph_file)
-@info nested_dissection!(g)
+res = nested_dissection!(g)
+@test res[1] == unique(res[1])
+@test res[2] == 57

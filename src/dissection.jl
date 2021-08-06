@@ -70,26 +70,24 @@ function separator!(
     n -= 2
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
-    indices = Array(1:(n - length(sep)))
-    for i = 1:length(sep)
-        max_i = n + 1 - i
-        toremove = sep[i]
-        if toremove < max_i
-            indices[toremove] = max_i
-        end
-        rem_vertex!(g, toremove)
+    labels = collect(1:n)
+    for rm_origin_id in sep
+        rm = findfirst(id -> id == rm_origin_id, labels)
+        rem_vertex!(g, rm)
+        labels[rm] = labels[end]
+        pop!(labels)
     end
     # catch the multiple parts created from the split
     split_parts = connected_components(g)
 
     @debug "subgraph_nodes=$subgraph_nodes"
-    @debug "indices=$indices"
+    @debug "labels=$labels"
     @debug "split_parts=$split_parts"
     # be careful to return indices which make sense in the original root graph
     return (
         map(node -> subgraph_nodes[node], sep),
         map(
-            vector -> map(node -> subgraph_nodes[indices[node]], vector),
+            vector -> map(node -> subgraph_nodes[labels[node]], vector),
             split_parts,
         ),
     )
@@ -131,7 +129,6 @@ function nested_dissection!(g::SimpleGraph{Int64})
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
-            treewidth = max(treewidth, 1)
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
             continue

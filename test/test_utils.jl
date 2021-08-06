@@ -22,7 +22,7 @@ add_edge!(G, 3, 5)
 @test nv(G) == 0
 
 # complete graph
-n = 30
+n = 60
 G = SimpleGraph{Int64}(n)
 for i in 1:(n - 1)
     for j in (i + 1):n
