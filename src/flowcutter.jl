@@ -130,11 +130,9 @@ function piercing_node(
     best_nodes = .~(to_increase .| to_avoid)
     nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
     res = findfirst(p -> best_nodes[p], nodes)
-    res = if isnothing(res)
+    if isnothing(res)
         # second heuristic
-        findmax(map(p -> dist[p, avoid_node] - dist[increase_node, p], nodes))[2]
-    else
-        res
+        res = findmax(map(p -> dist[p, avoid_node] - dist[increase_node, p], nodes))[2]
     end
     return nodes[res]
 end
@@ -209,11 +207,7 @@ function flowcutter!(
                     cuts,
                     Cut(
                         arcs = cut_arcs,
-                        imbalance = (
-                            2 *
-                            (max(sum(S_reachable), n - sum(S_reachable)) - 1) /
-                            (n - 2)
-                        ) - 1,
+                        imbalance = 2 * (n - sum(S_reachable) - 1) / (n - 2) - 1,
                         expansion = length(cut_arcs) / (min(sum(S_reachable), n - sum(S_reachable)) - 1)
                     ),
                 )
@@ -245,11 +239,7 @@ function flowcutter!(
                     cuts,
                     Cut(
                         arcs = cut_arcs,
-                        imbalance = (
-                            2 *
-                            (max(sum(T_reachable), n - sum(T_reachable)) - 1) /
-                            (n - 2)
-                        ) - 1,
+                        imbalance = imbalance = 2 * (n - sum(T_reachable) - 1) / (n - 2) - 1,
                         expansion = length(cut_arcs) / (min(sum(T_reachable), n - sum(T_reachable)) - 1)
                     ),
                 )
