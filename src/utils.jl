@@ -1,5 +1,3 @@
-using LightGraphs
-
 """
     eliminate!(g::SimpleGraph{Int64}, v::Int64, labels)::Nothing
 Connect neighbors of v (in graph g) together if they are not already connected, delete v

@@ -1,8 +1,3 @@
-using LightGraphs
-using DataStructures
-using StatsBase
-
-
 """
     separator!(g, subgraph_nodes, max_imbalance=0.6, max_nsample=20)
 Call flowcutter (with s and t random) on g and pick nodes at random in the cut matching the 60% imbalance

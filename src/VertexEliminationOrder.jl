@@ -1,5 +1,10 @@
 module VertexEliminationOrder
 
+using LightGraphs
+using DataStructures
+using StatsBase
+using Parameters
+using SparseArrays
 
 include("utils.jl")
 include("heuristics.jl")
