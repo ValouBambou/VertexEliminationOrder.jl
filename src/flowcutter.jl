@@ -208,7 +208,7 @@ function flowcutter!(
                     Cut(
                         arcs = cut_arcs,
                         imbalance = 2 * (n - sum(S_reachable) - 1) / (n - 2) - 1,
-                        expansion = length(cut_arcs) / (min(sum(S_reachable), n - sum(S_reachable)) - 1)
+                        expansion = length(cut_arcs) / (sum(S_reachable) - 1)
                     ),
                 )
 
@@ -240,7 +240,7 @@ function flowcutter!(
                     Cut(
                         arcs = cut_arcs,
                         imbalance = imbalance = 2 * (n - sum(T_reachable) - 1) / (n - 2) - 1,
-                        expansion = length(cut_arcs) / (min(sum(T_reachable), n - sum(T_reachable)) - 1)
+                        expansion = length(cut_arcs) / (sum(T_reachable) - 1)
                     ),
                 )
 
