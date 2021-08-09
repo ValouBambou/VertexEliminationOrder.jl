@@ -36,7 +36,7 @@ function separator!(
         add_vertex!(g)
         add_vertex!(g)
         s, t = sample(1:length(subgraph_nodes), 2, replace=false)
-        push!.([cuts], flowcutter!(g, s, t, dist))
+        append!(cuts, flowcutter!(g, s, t, dist))
         rem_vertex!(g, n)
         rem_vertex!(g, n - 1)
     end
