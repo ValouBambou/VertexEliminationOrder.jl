@@ -36,29 +36,20 @@ function separator!(
         rem_vertex!(g, n - 1)
     end
 
-
-    # find best size imbalance for cuts
-    minsize = typemax(Int64)
-    minimbalance = typemax(Int64)
+    # remove dominated cuts
+    candidates = Dict{Int64, Cut}()
     for c in cuts
         size = c.size
         imbalance = c.imbalance
-        expansion = c.expansion
-        if size < minsize
-            minsize = size
-        end
-        if imbalance < minimbalance
-            minimbalance = imbalance
+        # update candidates if they are not previous candidates with its size
+        # or in case the candidate is better than its predecessor i.e same this but lower imbalance
+        if !(size in keys(candidates)) || imbalance < candidates[size].imbalance
+            candidates[size] = c
         end
     end
-    # remove dominated cuts and cuts with more than max_imbalance (=0.6)
-    filter!(
-        c -> ((c.size == minsize) || (c.imbalance == minimbalance)) && (c.imbalance < max_imbalance),
-        cuts
-    )
 
     # select cut with min expansion
-    cut = findmin(c -> c.expansion, cuts)[2]
+    cut = findmin(c -> c.expansion, values(candidates))[2]
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
     @debug "cut=$cut"
     @debug "sep=$sep"
