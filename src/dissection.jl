@@ -82,9 +82,9 @@ end
 
 
 """
-    nested_dissection!(g)
+    iterative_dissection!(g)
 Computes an approximation of the upper bound of the treewidth of the graph g and
-an order for elimination using the nested dissection and the flow cutter algorithm.
+an order for elimination using the iterative dissection and the flow cutter algorithm.
 
 
 # Arguments
@@ -94,7 +94,7 @@ an order for elimination using the nested dissection and the flow cutter algorit
 - `order::Vector{Int64}` an array of vertices index.
 - `treewidth::Int64` the approximation of treewidth.
 """
-function nested_dissection!(g::SimpleGraph{Int64})
+function iterative_dissection!(g::SimpleGraph{Int64})
     n = nv(g)
     order = zeros(Int64, n)
     q = Queue{Vector{Int64}}()

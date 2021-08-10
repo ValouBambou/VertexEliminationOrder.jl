@@ -31,6 +31,6 @@ ENV["JULIA_DEBUG"]=VertexEliminationOrder
 
 
 g = graph_from_gr(graph_file)
-res = nested_dissection!(g)
+res = iterative_dissection!(g)
 @test res[1] == unique(res[1])
 @test res[2] == 57

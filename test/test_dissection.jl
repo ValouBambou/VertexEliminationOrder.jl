@@ -25,8 +25,8 @@ add_edge!(G, 8, 10)
 add_edge!(G, 9, 11)
 add_edge!(G, 9, 12)
 
-@info "Testing nested_dissection with custom graph"
-res = nested_dissection!(G)
+@info "Testing iterative_dissection with custom graph"
+res = iterative_dissection!(G)
 @info res
 # 6 should be separator but t seems that it depends on the random s and t
 @test res[2] == 4
