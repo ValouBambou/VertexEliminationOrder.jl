@@ -1,15 +1,11 @@
 using VertexEliminationOrder
 using Test
-using LightGraphs
 
 
 @testset "VertexEliminationOrder.jl" begin
+    include("test_utils.jl")
+    include("test_heuristics.jl")
+    include("test_flowcutter.jl")
+    include("test_dissection.jl")
 
-    G = smallgraph("house")
-    @info "Testing minwidth with house graph"
-    @test minwidth!(G) == ([1, 5, 4, 3, 2], 2)
-
-    G = smallgraph("house")
-    @info "Testing minwidth with house graph"
-    @test minfill!(G) == ([5, 1, 4, 3, 2], 2)
 end
