@@ -26,7 +26,7 @@ add_edge!(G, 9, 11)
 add_edge!(G, 9, 12)
 
 @info "Testing iterative_dissection with custom graph"
-res = iterative_dissection!(G)
+res = iterative_dissection(G)
 @info res
 # 6 should be separator but t seems that it depends on the random s and t
-@test res[2] == 4
+@test res[2] >= 4 # 4 is the tw but it returns an upper bound

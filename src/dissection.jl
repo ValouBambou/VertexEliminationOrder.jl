@@ -75,7 +75,7 @@ end
 
 
 """
-    iterative_dissection!(g)
+    iterative_dissection(g)
 Computes an approximation of the upper bound of the treewidth of the graph g and
 an order for elimination using the iterative dissection and the flow cutter algorithm.
 
@@ -87,14 +87,18 @@ an order for elimination using the iterative dissection and the flow cutter algo
 - `order::Vector{Int64}` an array of vertices index.
 - `treewidth::Int64` the approximation of treewidth.
 """
-function iterative_dissection!(g::SimpleGraph{Int64})
+function iterative_dissection(
+        g::SimpleGraph{Int64}, 
+        best_tw::Int64 = typemax(Int64)
+    )::Tuple{Vector{Int64}, Int64}
     n = nv(g)
     order = zeros(Int64, n)
+    treewidth = 0
     q = Queue{Vector{Int64}}()
     sep::Vector{Int64} = []
     enqueue!(q, collect(1:n))
     i = n
-    while !isempty(q)
+    while (!isempty(q)) && (treewidth < best_tw)
         subgraph_nodes = dequeue!(q)
         graph = induced_subgraph(g, subgraph_nodes)[1]
         # if graph is a tree or complete we can stop
@@ -104,11 +108,13 @@ function iterative_dissection!(g::SimpleGraph{Int64})
             @debug "graph is complete"
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
+            treewidth = max(n, treewidth)
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
+            treewidth = max(n, treewidth)
             continue
         end
 
@@ -121,10 +127,10 @@ function iterative_dissection!(g::SimpleGraph{Int64})
         k = length(sep)
         order[(i - k + 1):i] = sep
         i -= k
+        treewidth = max(k, treewidth)
 
         # add next subgraphs to the queue
         enqueue!.([q], toqueue)
     end
-    treewidth = treewidth_by_elimination!(g, order)
     return (order, treewidth)
 end
