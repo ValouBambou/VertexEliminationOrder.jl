@@ -20,7 +20,6 @@ function separator!(
     max_imbalance::Float64=0.6,
     max_nsample::Int64=20,
 )::Tuple{Vector{Int64},Array{Array{Int64,1},1}}
-    @debug "------ separator! --------"
 
     # run flowcutter many times and collect all of these cuts
     cuts::Vector{Cut} = []
@@ -31,7 +30,7 @@ function separator!(
         add_vertex!(g)
         add_vertex!(g)
         s, t = sample(1:length(subgraph_nodes), 2, replace=false)
-        append!(cuts, flowcutter!(g, s, t, dist))
+        append!(cuts, filter(c -> c.imbalance < max_imbalance, flowcutter!(g, s, t, dist)))
         rem_vertex!(g, n)
         rem_vertex!(g, n - 1)
     end
@@ -40,19 +39,17 @@ function separator!(
     candidates = Dict{Int64, Cut}()
     for c in cuts
         size = c.size
-        imbalance = c.imbalance
         # update candidates if they are not previous candidates with its size
         # or in case the candidate is better than its predecessor i.e same this but lower imbalance
-        if !(size in keys(candidates)) || imbalance < candidates[size].imbalance
+        if !(size in keys(candidates)) || c.imbalance < candidates[size].imbalance
             candidates[size] = c
         end
     end
 
     # select cut with min expansion
     cut = findmin(c -> c.expansion, values(candidates))[2]
+    @debug "selected cut = $cut"
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
-    @debug "cut=$cut"
-    @debug "sep=$sep"
     n -= 2
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
@@ -65,10 +62,6 @@ function separator!(
     end
     # catch the multiple parts created from the split
     split_parts = connected_components(g)
-
-    @debug "subgraph_nodes=$subgraph_nodes"
-    @debug "labels=$labels"
-    @debug "split_parts=$split_parts"
     # be careful to return indices which make sense in the original root graph
     return (
         map(node -> subgraph_nodes[node], sep),
@@ -102,7 +95,6 @@ function iterative_dissection!(g::SimpleGraph{Int64})
     enqueue!(q, collect(1:n))
     i = n
     while !isempty(q)
-        @debug "order is $order"
         subgraph_nodes = dequeue!(q)
         graph = induced_subgraph(g, subgraph_nodes)[1]
         # if graph is a tree or complete we can stop
@@ -122,7 +114,7 @@ function iterative_dissection!(g::SimpleGraph{Int64})
 
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes)
-        @debug "separator! returns $sep $toqueue"
+        #@debug "separator! returns $sep $toqueue"
 
 
         # update order and treewidth

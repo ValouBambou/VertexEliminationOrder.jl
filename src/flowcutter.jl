@@ -239,9 +239,9 @@ function flowcutter!(
                     cuts,
                     Cut(
                         arcs = cut_arcs,
-                        imbalance = imbalance = 2 * (n - sum(T_reachable) - 1) / (n - 2) - 1,
+                        imbalance =  2 * (n - sum(T_reachable) - 1) / (n - 2) - 1,
                         expansion = length(cut_arcs) / (sum(T_reachable) - 1)
-                    ),
+                    )
                 )
 
                 x = piercing_node(

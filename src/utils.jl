@@ -61,7 +61,6 @@ Computes the optimal elimination order for nodes in a tree. Graph is modified, a
 - `order::Vector{Int64}` vertex elimination order (indices in the root graph) to get treewidth of 1 in the subtree.
 """
 function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{Int64}
-    @debug "tree_order! args : graph = $graph, nodes = $nodes"
     n = length(nodes)
     eliminated = 1
     order = zeros(Int64, n)
@@ -89,6 +88,5 @@ function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{In
     if order[n] == 0
         order[n] = lastnode
     end
-    @debug "tree_order! return : $order"
     return order
 end
