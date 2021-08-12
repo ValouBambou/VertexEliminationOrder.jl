@@ -138,14 +138,15 @@ function iterative_dissection(
             Ic = falses(n)
             Ic[new_interiors] .= true
             Bc = falses(n)
-            Bc[sep] .= true
-            Bc = map(
+            tmp_Bc = findall(cell.boundary)
+            tmp_Bc = findall(
                 node -> any(
                     bound -> has_edge(g, node, bound), 
-                    cell.boundary
+                    tmp_Bc
                     ), 
-                Bc
+                sep
             )
+            Bc[tmp_Bc] .= true
             new_cell = Cell(boundary = Bc, interior = Ic)
             enqueue!(q, new_cell, new_cell.size)
         end
