@@ -94,13 +94,14 @@ function iterative_dissection(
     n = nv(g)
     order = zeros(Int64, n)
     treewidth = 0
-    q = Queue{Vector{Int64}}()
+    pq = PriorityQueue{Int, Tuple{Vector{Int64}, Vector{Int64}}}()
     sep::Vector{Int64} = []
-    enqueue!(q, collect(1:n))
+    # enqueue!(q, collect(1:n))
+    pq[(collect(1:n), Int[])] = n
     i = n
     while (!isempty(q)) && (treewidth < best_tw)
-        subgraph_nodes = dequeue!(q)
-        graph = induced_subgraph(g, subgraph_nodes)[1]
+        Ic, Bc = dequeue!(pq)
+        graph = induced_subgraph(g, Ic)[1]
         # if graph is a tree or complete we can stop
         n = nv(graph)
         nedges = ne(graph)
@@ -119,18 +120,23 @@ function iterative_dissection(
         end
 
         # compute separator and cut graph in several parts (graph and indices)
-        sep, toqueue = separator!(graph, subgraph_nodes)
+        sep, toqueue = separator!(graph, Ic)
         #@debug "separator! returns $sep $toqueue"
 
 
         # update order and treewidth
-        k = length(sep)
+        k = length(sep) + length(Bc)
         order[(i - k + 1):i] = sep
         i -= k
         treewidth = max(k, treewidth)
 
         # add next subgraphs to the queue
-        enqueue!.([q], toqueue)
+        # enqueue!.([q], toqueue)
+        for Ii in toqueue
+            Bi = [v for v in union(sep, Bc) if is_adjacent(v, Ii)]
+            tw_ub = length(Ii) + length(Bi)
+            pq[(Ii, Bi)] = tw_ub
+        end
     end
     return (order, treewidth)
 end
