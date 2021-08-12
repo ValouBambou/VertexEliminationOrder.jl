@@ -16,10 +16,10 @@ several times and select the best_order and treewidth.
 function sample_iterative_dissections(
     graph::SimpleGraph{Int64}, 
     duration::Float64
-    )::Tuple{Vector{Int64},Int64}
+    )::Pair{Vector{Int64},Int64}
 
     best_tw = typemax(Int64)
-    best_order = zeros(Int64, nv(graph))
+    best_order = []
     start = time()
     while time() - start < duration
         tmp1, tmp2 = iterative_dissection(graph, best_tw)
@@ -27,5 +27,5 @@ function sample_iterative_dissections(
             best_order, best_tw = tmp1, tmp2
         end
     end
-    return (best_order, best_tw)
+    return best_order => best_tw
 end

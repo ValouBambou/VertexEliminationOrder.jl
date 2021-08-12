@@ -25,7 +25,7 @@ as backward growing.
 function forward_grow!(
     set::BitVector,
     g::SimpleGraph,
-    flow_matrix::Array{Int64,2},
+    flow_matrix::SparseMatrixCSC{Int64,Int64},
     capacity_matrix::SparseMatrixCSC{Int64,Int64},
 )::Nothing
     # init the breadth first search algorithm
@@ -63,7 +63,7 @@ flow_matrix[v,u] += -1.
 - `augment::Int64` the augmentation of the flow so 1 if path is found, 0 otherwise.
 """
 function augment_flow!(
-    flow_matrix::Array{Int64,2},
+    flow_matrix::SparseMatrixCSC{Int64,Int64},
     capacity_matrix::SparseMatrixCSC{Int64,Int64},
     g::SimpleGraph,
     source::Int64,
@@ -122,8 +122,7 @@ function piercing_node(
     cut::Vector{Pair{Int64,Int64}},
     to_increase::BitVector,
     to_avoid::BitVector,
-    increase_node::Int64,
-    avoid_node::Int64,
+    source_increase::Bool,
     dist::Array{Int64,2},
 )::Int64
     # first heuristic
@@ -132,7 +131,8 @@ function piercing_node(
     res = findfirst(p -> best_nodes[p], nodes)
     if isnothing(res)
         # second heuristic
-        res = findmax(map(p -> dist[p, avoid_node] - dist[increase_node, p], nodes))[2]
+        increase_node, avoid_node = source_increase ? (1, 2) : (2, 1)
+        res = findmax(map(p -> dist[p, avoid_node] - dist[p, increase_node], nodes))[2]
     end
     return nodes[res]
 end
@@ -147,7 +147,7 @@ sources created before.
 -`g::SimpleGraph` the graph to consider.
 -`source::Int64` index of the source node.
 -`target::Int64` index of the target node.
--`dist::Matrix{Int64}` matrix of distance between all nodes in graph (weight=1).
+-`dist::Matrix{Int64}` matrix n x 2 of distance between s and t and all other nodes in graph (weight=1).
 
 # Return
 -`cuts::Vector{Cut}` all the cuts computed by flowcutter.
@@ -168,7 +168,7 @@ function flowcutter!(
     add_edge!(g, target, super_t)
 
 
-    flow_matrix = zeros(Int64, n, n)
+    flow_matrix = spzeros(Int64, n, n)
     capacity_matrix = SparseMatrixCSC{Int64,Int64}(adjacency_matrix(g))
     capacity_matrix[super_s, source] = typemax(Int64)
     capacity_matrix[target, super_t] = typemax(Int64)
@@ -216,8 +216,7 @@ function flowcutter!(
                     cut_arcs,
                     S_reachable,
                     T_reachable,
-                    source,
-                    target,
+                    true,
                     dist,
                 )
                 S[x] = 1
@@ -248,8 +247,7 @@ function flowcutter!(
                     cut_arcs,
                     T_reachable,
                     S_reachable,
-                    target,
-                    source,
+                    false,
                     dist,
                 )
                 T[x] = 1

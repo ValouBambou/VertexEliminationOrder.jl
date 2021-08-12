@@ -1,3 +1,9 @@
+@with_kw struct Cell
+    boundary::BitVector
+    interior::BitVector
+    size::Int64 = sum(boundary .| interior)
+end
+
 """
     separator!(g, subgraph_nodes, max_imbalance=0.6, max_nsample=20)
 Call flowcutter (with s and t random) on g and pick nodes at random in the cut matching the 60% imbalance
@@ -19,17 +25,17 @@ function separator!(
     subgraph_nodes::Vector{Int64},
     max_imbalance::Float64=0.6,
     max_nsample::Int64=20,
-)::Tuple{Vector{Int64},Array{Array{Int64,1},1}}
+)::Tuple{Vector{Int64},Vector{Vector{Int}}}
 
     # run flowcutter many times and collect all of these cuts
     cuts::Vector{Cut} = []
     n = nv(g) + 2
 
-    dist = floyd_warshall_shortest_paths(g).dists
     for i in 1:max_nsample
         add_vertex!(g)
         add_vertex!(g)
         s, t = sample(1:length(subgraph_nodes), 2, replace=false)
+        dist = [dijkstra_shortest_paths(g, s).dists dijkstra_shortest_paths(g, t).dists]
         append!(cuts, filter(c -> c.imbalance < max_imbalance, flowcutter!(g, s, t, dist)))
         rem_vertex!(g, n)
         rem_vertex!(g, n - 1)
@@ -90,16 +96,16 @@ an order for elimination using the iterative dissection and the flow cutter algo
 function iterative_dissection(
         g::SimpleGraph{Int64}, 
         best_tw::Int64 = typemax(Int64)
-    )::Tuple{Vector{Int64}, Int64}
+    )::Pair{Vector{Int64}, Int64}
     n = nv(g)
     order = zeros(Int64, n)
     treewidth = 0
-    q = Queue{Vector{Int64}}()
-    sep::Vector{Int64} = []
-    enqueue!(q, collect(1:n))
+    q = PriorityQueue{Cell, Int64}(Base.Order.Reverse)
+    enqueue!(q, Cell(boundary = falses(n), interior = trues(n)), n)
     i = n
     while (!isempty(q)) && (treewidth < best_tw)
-        subgraph_nodes = dequeue!(q)
+        cell = dequeue!(q)
+        subgraph_nodes = findall(it -> it > 0, cell.interior)
         graph = induced_subgraph(g, subgraph_nodes)[1]
         # if graph is a tree or complete we can stop
         n = nv(graph)
@@ -117,20 +123,32 @@ function iterative_dissection(
             treewidth = max(n, treewidth)
             continue
         end
-
+        
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes)
-        #@debug "separator! returns $sep $toqueue"
-
 
         # update order and treewidth
-        k = length(sep)
+        k = length(sep) + sum(cell.boundary)
         order[(i - k + 1):i] = sep
         i -= k
         treewidth = max(k, treewidth)
-
+        n = nv(g)
         # add next subgraphs to the queue
-        enqueue!.([q], toqueue)
+        for new_interiors in toqueue
+            Ic = falses(n)
+            Ic[new_interiors] .= true
+            Bc = falses(n)
+            Bc[sep] .= true
+            Bc = map(
+                node -> any(
+                    bound -> has_edge(g, node, bound), 
+                    cell.boundary
+                    ), 
+                Bc
+            )
+            new_cell = Cell(boundary = Bc, interior = Ic)
+            enqueue!(q, new_cell, new_cell.size)
+        end
     end
-    return (order, treewidth)
+    return order => treewidth
 end
