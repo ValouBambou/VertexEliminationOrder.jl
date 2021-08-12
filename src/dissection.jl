@@ -114,13 +114,13 @@ function iterative_dissection(
             @debug "graph is complete"
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
-            treewidth = max(n, treewidth)
+            treewidth = max(cell.size, treewidth)
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
-            treewidth = max(n, treewidth)
+            treewidth = max(cell.size, treewidth)
             continue
         end
         
