@@ -113,7 +113,7 @@ function iterative_dissection(
             @debug "graph is complete"
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
-            treewidth = max(cell.size + 1, treewidth)
+            treewidth = max(cell.size - 1, treewidth)
             @debug "bagsize = $(cell.size) tw = $treewidth"
             continue
         elseif nedges == n - 1
@@ -132,13 +132,13 @@ function iterative_dissection(
         k = length(sep) 
         order[(i - k + 1):i] = sep
         i -= k
-        treewidth = max(k + sum(cell.boundary) + 1, treewidth)
+        treewidth = max(k + sum(cell.boundary) - 1, treewidth)
         @debug "bagsize = $(k + sum(cell.boundary)) tw = $treewidth"
         n = nv(g)
         # add next subgraphs to the queue
-        for new_interiors in toqueue
+        for new_interior in toqueue
             Ic = falses(n)
-            Ic[new_interiors] .= true
+            Ic[new_interior] .= true
             Bc = falses(n)
             Bc[sep] .= true
             Bound_union_Sep = findall(Bc .| cell.boundary)
@@ -146,7 +146,7 @@ function iterative_dissection(
             tmp_Bc = Bound_union_Sep[findall(
                 node -> any(
                     node2 -> has_edge(g, node, node2), 
-                    subgraph_nodes
+                    new_interior
                     ), 
                 Bound_union_Sep
             )]

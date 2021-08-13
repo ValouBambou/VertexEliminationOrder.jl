@@ -15,4 +15,4 @@ res = iterative_dissection(g)
 @info res[2]
 res_expected = treewidth_by_elimination!(g, res[1])
 @info res_expected
-@test res[2] >= res_expected
+@test res[2] == res_expected

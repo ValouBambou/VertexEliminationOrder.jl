@@ -27,12 +27,12 @@ res = iterative_dissection(G)
 # 6 should be separator but t seems that it depends on the random s and t
 @test res[2] >= 4 # 4 is the tw but it returns an upper bound
 
-for n in 2:10
+for n in 2:20
     g = square_lattice_graph(n)
     @info "Testing iterative_dissection with square lattice graph n = $n"
     tmp = iterative_dissection(g)
     @info tmp
     tmp_expected = treewidth_by_elimination!(g, tmp[1])
     @info tmp_expected
-    @test tmp[2] >= tmp_expected
+    @test tmp[2] == tmp_expected
 end
