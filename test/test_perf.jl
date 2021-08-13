@@ -12,4 +12,7 @@ g = smallgraph("house")
 iterative_dissection(g)
 g = graph_from_gr(graph_file)
 res = iterative_dissection(g)
-@test res[2] >= treewidth_by_elimination!(g, res[1])
+@info res[2]
+res_expected = treewidth_by_elimination!(g, res[1])
+@info res_expected
+@test res[2] >= res_expected

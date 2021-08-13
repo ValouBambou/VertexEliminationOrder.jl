@@ -54,7 +54,6 @@ function separator!(
 
     # select cut with min expansion
     cut = findmin(c -> c.expansion, values(candidates))[2]
-    @debug "selected cut = $cut"
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
     n -= 2
     # split the subgraph in several parts
@@ -114,38 +113,43 @@ function iterative_dissection(
             @debug "graph is complete"
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
-            treewidth = max(cell.size, treewidth)
+            treewidth = max(cell.size + 1, treewidth)
+            @debug "bagsize = $(cell.size) tw = $treewidth"
             continue
         elseif nedges == n - 1
             @debug "graph is a tree"
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
-            treewidth = max(cell.size, treewidth)
+            treewidth = max(1, treewidth)
             continue
         end
         
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes)
+        @debug "sep = $sep"
 
         # update order and treewidth
-        k = length(sep) + sum(cell.boundary)
+        k = length(sep) 
         order[(i - k + 1):i] = sep
         i -= k
-        treewidth = max(k, treewidth)
+        treewidth = max(k + sum(cell.boundary) + 1, treewidth)
+        @debug "bagsize = $(k + sum(cell.boundary)) tw = $treewidth"
         n = nv(g)
         # add next subgraphs to the queue
         for new_interiors in toqueue
             Ic = falses(n)
             Ic[new_interiors] .= true
             Bc = falses(n)
-            tmp_Bc = findall(cell.boundary)
-            tmp_Bc = findall(
+            Bc[sep] .= true
+            Bound_union_Sep = findall(Bc .| cell.boundary)
+            Bc[sep] .= false
+            tmp_Bc = Bound_union_Sep[findall(
                 node -> any(
-                    bound -> has_edge(g, node, bound), 
-                    tmp_Bc
+                    node2 -> has_edge(g, node, node2), 
+                    subgraph_nodes
                     ), 
-                sep
-            )
+                Bound_union_Sep
+            )]
             Bc[tmp_Bc] .= true
             new_cell = Cell(boundary = Bc, interior = Ic)
             enqueue!(q, new_cell, new_cell.size)

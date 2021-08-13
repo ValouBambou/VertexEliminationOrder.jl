@@ -111,3 +111,33 @@ function graph_from_gr(filename::String)::SimpleGraph{Int64}
 
     G
 end
+
+"""
+    square_lattice_graph(n::Int64)
+Return a square lattice graph of dimension n. The dimension means
+a big square made of n x n squares so (n+1)² nodes in total.
+
+# Example
+
+n = 2 give a graph like this:
+    1 ---- 2 ---- 3
+    |      |      |
+    4 ---- 5 ---- 6
+    |      |      |
+    7 ---- 8 ---- 9
+
+"""
+function square_lattice_graph(n::Int64)::SimpleGraph{Int64}
+    nrow = (n + 1)
+    nvertices =  nrow * nrow
+    g = SimpleGraph{Int64}(nvertices)
+    for i in 1:nvertices
+        if i % nrow != 0
+            add_edge!(g, i, i + 1)
+        end
+        if trunc(i / nrow) < nrow - 1
+            add_edge!(g, i, i + nrow)
+        end
+    end
+    return g
+end

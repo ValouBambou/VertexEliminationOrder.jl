@@ -4,10 +4,6 @@ using LightGraphs
 
 ENV["JULIA_DEBUG"]=VertexEliminationOrder
 
-using LightGraphs
-using Test
-using VertexEliminationOrder
-
 G = SimpleGraph{Int64}(12)
 # 1 to 5 is a clique
 for i in 1:5
@@ -30,3 +26,13 @@ res = iterative_dissection(G)
 @info res
 # 6 should be separator but t seems that it depends on the random s and t
 @test res[2] >= 4 # 4 is the tw but it returns an upper bound
+
+for n in 2:10
+    g = square_lattice_graph(n)
+    @info "Testing iterative_dissection with square lattice graph n = $n"
+    tmp = iterative_dissection(g)
+    @info tmp
+    tmp_expected = treewidth_by_elimination!(g, tmp[1])
+    @info tmp_expected
+    @test tmp[2] >= tmp_expected
+end
