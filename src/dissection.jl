@@ -29,16 +29,12 @@ function separator!(
 
     # run flowcutter many times and collect all of these cuts
     cuts::Vector{Cut} = []
-    n = nv(g) + 2
+    n = length(subgraph_nodes)
 
     for i in 1:max_nsample
-        add_vertex!(g)
-        add_vertex!(g)
-        s, t = sample(1:length(subgraph_nodes), 2, replace=false)
-        dist = [dijkstra_shortest_paths(g, s).dists dijkstra_shortest_paths(g, t).dists]
-        append!(cuts, filter(c -> c.imbalance < max_imbalance, flowcutter!(g, s, t, dist)))
-        rem_vertex!(g, n)
-        rem_vertex!(g, n - 1)
+        s, t = sample(1:n, 2, replace=false)
+        res = filter(c -> c.imbalance < max_imbalance, flowcutter(g, s, t))
+        append!(cuts, res)
     end
 
     # remove dominated cuts
@@ -52,10 +48,11 @@ function separator!(
         end
     end
 
-    # select cut with min expansion
-    cut = findmin(c -> c.expansion, values(candidates))[2]
+    # select cut with min expansion   
+    cuts = [c for c in values(candidates)]  
+    cut = cuts[findmin(map(c->c.expansion, cuts))[2]]
     sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
-    n -= 2
+    
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
     labels = collect(1:n)

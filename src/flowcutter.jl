@@ -139,30 +139,32 @@ end
 
 
 """
-	flowcutter!(g, source, target, dist)
+	flowcutter(graph, source, target, dist)
 Computes multiple cuts more and more balanced in a graph g. Need super target and
 sources created before.
 
 # Arguments
--`g::SimpleGraph` the graph to consider.
+-`graph::SimpleGraph` the graph to consider.
 -`source::Int64` index of the source node.
 -`target::Int64` index of the target node.
--`dist::Matrix{Int64}` matrix n x 2 of distance between s and t and all other nodes in graph (weight=1).
 
 # Return
 -`cuts::Vector{Cut}` all the cuts computed by flowcutter.
 """
-function flowcutter!(
-    g::SimpleGraph,
+function flowcutter(
+    graph::SimpleGraph,
     source::Int64,
     target::Int64,
-    dist::Matrix{Int64},
 )::Vector{Cut}
-
+    g = copy(graph)
+    add_vertex!(g)
+    add_vertex!(g)
     n = nv(g)
 
     super_s = n - 1
     super_t = n
+
+    dist = [dijkstra_shortest_paths(g, source).dists dijkstra_shortest_paths(g, target).dists]
 
     add_edge!(g, super_s, source)
     add_edge!(g, target, super_t)
@@ -264,5 +266,7 @@ function flowcutter!(
             end
         end
     end
+    rem_vertex!(g, super_t)
+    rem_vertex!(g, super_s)
     return cuts
 end

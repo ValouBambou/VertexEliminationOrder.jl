@@ -56,4 +56,4 @@ TR=falses(5); SR[[1, 3]] .= true
 @test piercing_node(cut, SR, TR, 5, 1, dist) == 2
 
 #test flowcutter
-@info flowcutter!(G, 5, 1, dist)
+@info flowcutter(G, 5, 1)
