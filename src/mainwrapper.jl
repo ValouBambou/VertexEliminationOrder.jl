@@ -25,10 +25,12 @@ function sample_iterative_dissections(
     best_order = Vector{Int64}()
     start = time()
     while time() - start < duration
-        @debug "start 1 run current tw = $best_tw , time = $(time() - start)"
-        res = iterative_dissection(graph, best_tw)
-        if res[2] < best_tw
-            best_order, best_tw = res
+        @debug "start 10 run current tw = $best_tw , time = $(time() - start)"
+        Threads.@threads for i = 1:nparallel
+            res = iterative_dissection(graph, best_tw)
+            if res[2] < best_tw
+                best_order, best_tw = res
+            end
         end
     end
     return best_order => best_tw
