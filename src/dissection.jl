@@ -28,14 +28,13 @@ function separator!(
 )::Tuple{Vector{Int64},Vector{Vector{Int}}}
 
     # run flowcutter many times and collect all of these cuts
-    cuts::Vector{Cut} = []
+    cuts = Vector{Cut}()
     n = length(subgraph_nodes)
     for i = 1:max_nsample
         s, t = sample(1:n, 2, replace=false)
-        res = filter(c -> c.imbalance < max_imbalance, flowcutter(g, s, t))
-        append!(cuts, res)
+        append!(cuts, flowcutter(g, s, t))
     end
-
+    filter!(c -> c.imbalance < max_imbalance, cuts)
     # remove dominated cuts
     candidates = Dict{Int64, Cut}()
     for c in cuts

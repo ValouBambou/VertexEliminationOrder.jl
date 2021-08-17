@@ -138,12 +138,11 @@ end
 
 
 """
-	flowcutter(graph, source, target, dist)
-Computes multiple cuts more and more balanced in a graph g. Need super target and
-sources created before.
+	flowcutter(g, source, target)
+Computes multiple cuts more and more balanced in a graph g.
 
 # Arguments
--`graph::SimpleGraph` the graph to consider.
+-`g::SimpleGraph{Int64}` the graph to consider.
 -`source::Int64` index of the source node.
 -`target::Int64` index of the target node.
 
@@ -151,11 +150,10 @@ sources created before.
 -`cuts::Vector{Cut}` all the cuts computed by flowcutter.
 """
 function flowcutter(
-    graph::SimpleGraph,
+    g::SimpleGraph{Int64},
     source::Int64,
     target::Int64,
 )::Vector{Cut}
-    g = copy(graph)
     add_vertex!(g)
     add_vertex!(g)
     n = nv(g)
@@ -182,7 +180,7 @@ function flowcutter(
     S_reachable = copy(S)
     T_reachable = copy(T)
 
-    cuts::Vector{Cut} = []
+    cuts = Vector{Cut}()
 
     forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
     forward_grow!(T_reachable, g, flow_matrix, capacity_matrix)
@@ -195,7 +193,7 @@ function flowcutter(
             forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
             forward_grow!(T_reachable, g, flow_matrix, capacity_matrix)
         else
-            cut_arcs::Vector{Pair{Int64,Int64}} = []
+            cut_arcs = Vector{Pair{Int64,Int64}}()
             size_SR = sum(S_reachable)
             size_TR = sum(T_reachable)
             if size_SR <= size_TR
