@@ -17,7 +17,7 @@ as backward growing.
 - `set::BitVector` the set of nodes to consider.
 - `g::SimpleGraph` the graph to explore.
 - `capacity_matrix::SparseMatrixCSC{Int64, Int64}` capacities of arcs.
-- `flow_matrix::Array{Int64, 2}` current flow of arcs.
+- `flow_matrix::SparseMatrixCSC{Int64,Int64}` current flow of arcs.
 
 # Return
 - `nothing` (only set is modified)
@@ -53,7 +53,7 @@ is modified for every arc (u,v) in the path it does flow_matrix[u, v] += 1 and
 flow_matrix[v,u] += -1.
 
 # Arguments
--`flow_matrix::Array{Int64, 2}` the value of the current flow which may be modified.
+-`flow_matrix::SparseMatrixCSC{Int64,Int64}` the value of the current flow which may be modified.
 -`capacity_matrix::SparseMatrixCSC{Int64, Int64}` the value of the arcs capacities.
 -`g::SimpleGraph` the graph to consider.
 -`source::Int64` index of the source node.
@@ -126,9 +126,8 @@ function piercing_node(
     dist::Array{Int64,2},
 )::Int64
     # first heuristic
-    best_nodes = .~(to_increase .| to_avoid)
     nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
-    res = findfirst(p -> best_nodes[p], nodes)
+    res = findfirst(p -> ~(to_increase[p] | to_avoid[p]), nodes)
     if isnothing(res)
         # second heuristic
         increase_node, avoid_node = source_increase ? (1, 2) : (2, 1)
@@ -197,7 +196,9 @@ function flowcutter(
             forward_grow!(T_reachable, g, flow_matrix, capacity_matrix)
         else
             cut_arcs::Vector{Pair{Int64,Int64}} = []
-            if sum(S_reachable) <= sum(T_reachable)
+            size_SR = sum(S_reachable)
+            size_TR = sum(T_reachable)
+            if size_SR <= size_TR
                 forward_grow!(S, g, flow_matrix, capacity_matrix)
                 # output source side cut edges
                 for e in edges(g)
@@ -209,8 +210,8 @@ function flowcutter(
                     cuts,
                     Cut(
                         arcs = cut_arcs,
-                        imbalance = 2 * (n - sum(S_reachable) - 1) / (n - 2) - 1,
-                        expansion = length(cut_arcs) / (sum(S_reachable) - 1)
+                        imbalance = 2 * (n - size_SR - 1) / (n - 2) - 1,
+                        expansion = length(cut_arcs) / (size_SR - 1)
                     ),
                 )
 
@@ -240,8 +241,8 @@ function flowcutter(
                     cuts,
                     Cut(
                         arcs = cut_arcs,
-                        imbalance =  2 * (n - sum(T_reachable) - 1) / (n - 2) - 1,
-                        expansion = length(cut_arcs) / (sum(T_reachable) - 1)
+                        imbalance =  2 * (n - size_TR - 1) / (n - 2) - 1,
+                        expansion = length(cut_arcs) / (size_TR - 1)
                     )
                 )
 

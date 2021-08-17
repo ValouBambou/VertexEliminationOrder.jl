@@ -30,8 +30,7 @@ function separator!(
     # run flowcutter many times and collect all of these cuts
     cuts::Vector{Cut} = []
     n = length(subgraph_nodes)
-
-    for i in 1:max_nsample
+    for i = 1:max_nsample
         s, t = sample(1:n, 2, replace=false)
         res = filter(c -> c.imbalance < max_imbalance, flowcutter(g, s, t))
         append!(cuts, res)
@@ -42,7 +41,7 @@ function separator!(
     for c in cuts
         size = c.size
         # update candidates if they are not previous candidates with its size
-        # or in case the candidate is better than its predecessor i.e same this but lower imbalance
+        # or in case the candidate is better than its predecessor i.e same size but lower imbalance
         if !(size in keys(candidates)) || c.imbalance < candidates[size].imbalance
             candidates[size] = c
         end
@@ -107,14 +106,14 @@ function iterative_dissection(
         n = nv(graph)
         nedges = ne(graph)
         if nedges == n * (n - 1) / 2
-            @debug "graph is complete"
+            # @debug "graph is complete"
             order[(i - n + 1):i] .= subgraph_nodes
             i -= n
             treewidth = max(cell.size - 1, treewidth)
-            @debug "bagsize = $(cell.size) tw = $treewidth"
+            # @debug "bagsize = $(cell.size) tw = $treewidth"
             continue
         elseif nedges == n - 1
-            @debug "graph is a tree"
+            # @debug "graph is a tree"
             order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
             treewidth = max(1, treewidth)
@@ -123,14 +122,14 @@ function iterative_dissection(
         
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes)
-        @debug "sep = $sep"
+        # @debug "sep = $sep"
 
         # update order and treewidth
         k = length(sep) 
         order[(i - k + 1):i] = sep
         i -= k
         treewidth = max(k + sum(cell.boundary) - 1, treewidth)
-        @debug "bagsize = $(k + sum(cell.boundary)) tw = $treewidth"
+        # @debug "bagsize = $(k + sum(cell.boundary)) tw = $treewidth"
         n = nv(g)
         # add next subgraphs to the queue
         for new_interior in toqueue
