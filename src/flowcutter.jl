@@ -36,7 +36,7 @@ function forward_grow!(
         cur = dequeue!(q)
         set[cur] = true
         for nei in neighbors(g, cur)
-            if !set[nei] &&
+            if (!set[nei]) &&
                abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 set[nei] = true
                 enqueue!(q, nei)
@@ -79,7 +79,7 @@ function augment_flow!(
     while (cur != target) && (!isempty(stack))
         cur = pop!(stack)
         for nei in neighbors(g, cur)
-            if !visited[nei] &&
+            if (!visited[nei]) &&
                abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 visited[nei] = true
                 push!(stack, nei)
@@ -138,11 +138,11 @@ end
 
 
 """
-	flowcutter(g, source, target)
+	flowcutter(graph, source, target)
 Computes multiple cuts more and more balanced in a graph g.
 
 # Arguments
--`g::SimpleGraph{Int64}` the graph to consider.
+-`graph::SimpleGraph{Int64}` the graph to consider.
 -`source::Int64` index of the source node.
 -`target::Int64` index of the target node.
 
@@ -150,10 +150,11 @@ Computes multiple cuts more and more balanced in a graph g.
 -`cuts::Vector{Cut}` all the cuts computed by flowcutter.
 """
 function flowcutter(
-    g::SimpleGraph{Int64},
+    graph::SimpleGraph{Int64},
     source::Int64,
     target::Int64,
 )::Vector{Cut}
+    g = copy(graph)
     add_vertex!(g)
     add_vertex!(g)
     n = nv(g)
