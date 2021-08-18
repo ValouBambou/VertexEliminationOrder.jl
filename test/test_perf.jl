@@ -14,4 +14,8 @@ g = smallgraph("house")
 iterative_dissection(g)
 
 g = graph_from_gr(graph_file)
+@info "timing main algorithm iterative_dissection"
 @time iterative_dissection(g)
+
+@info "testing wrapper function for 30s"
+@time order_tw_by_dissections(g, 30)

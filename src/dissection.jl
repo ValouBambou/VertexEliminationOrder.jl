@@ -101,9 +101,23 @@ function iterative_dissection(
     while (!isempty(q)) && (treewidth < best_tw)
         cell = dequeue!(q)
         subgraph_nodes = findall(it -> it > 0, cell.interior)
+        n = length(subgraph_nodes)
+        if cell.size == treewidth + 1
+            # @debug "stop criteria triggered"
+            while !isempty(q)
+                @inbounds order[(i - n + 1):i] .= subgraph_nodes
+                i -= n
+                subgraph_nodes = findall(it -> it > 0, dequeue!(q).interior)
+                n = length(subgraph_nodes)
+            end
+            @inbounds order[(i - n + 1):i] .= subgraph_nodes
+            i -= n
+            break
+        end
+        
         graph = induced_subgraph(g, subgraph_nodes)[1]
         # if graph is a tree or complete we can stop
-        n = nv(graph)
+        
         nedges = ne(graph)
         if nedges == n * (n - 1) / 2
             # @debug "graph is complete"

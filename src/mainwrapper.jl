@@ -18,7 +18,7 @@ several times in parallel and select the best_order and treewidth.
 function order_tw_by_dissections(
     graph::SimpleGraph{Int64}, 
     duration::Int64,
-    nparallel::Int64 = 10,
+    nparallel::Int64 = 2 * Threads.nthreads(),
     )::Pair{Vector{Int64},Int64}
 
     best_tw = typemax(Int64)
@@ -33,5 +33,6 @@ function order_tw_by_dissections(
             end
         end
     end
+    @debug "finally best tw = $best_tw"
     return best_order => best_tw
 end
