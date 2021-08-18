@@ -32,10 +32,10 @@ function forward_grow!(
     q = Queue{Int64}()
     enqueue!.([q], findall(x -> x > 0, set))
     set .= false
-    while !isempty(q)
+    @inbounds while !isempty(q)
         cur = dequeue!(q)
         set[cur] = true
-        for nei in neighbors(g, cur)
+        @inbounds for nei in neighbors(g, cur)
             if (!set[nei]) &&
                abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 set[nei] = true
@@ -78,7 +78,7 @@ function augment_flow!(
     cur = source
     while (cur != target) && (!isempty(stack))
         cur = pop!(stack)
-        for nei in neighbors(g, cur)
+        @inbounds for nei in neighbors(g, cur)
             if (!visited[nei]) &&
                abs(flow_matrix[cur, nei]) < capacity_matrix[cur, nei]
                 visited[nei] = true
@@ -90,7 +90,7 @@ function augment_flow!(
 
     return if cur == target
         # augmenting path exists so augment flow along it
-        while cur != source
+        @inbounds while cur != source
             next = cur
             cur = prevs[cur]
             flow_matrix[cur, next] += 1
@@ -127,7 +127,7 @@ function piercing_node(
 )::Int64
     # first heuristic
     nodes = map(arc -> to_increase[arc.first] ? arc.second : arc.first, cut)
-    res = findfirst(p -> ~(to_increase[p] | to_avoid[p]), nodes)
+    @inbounds res = findfirst(p -> ~(to_increase[p] | to_avoid[p]), nodes)
     if isnothing(res)
         # second heuristic
         increase_node, avoid_node = source_increase ? (1, 2) : (2, 1)
@@ -170,13 +170,13 @@ function flowcutter(
 
     flow_matrix = spzeros(Int64, n, n)
     capacity_matrix = SparseMatrixCSC{Int64,Int64}(adjacency_matrix(g))
-    capacity_matrix[super_s, source] = typemax(Int64)
-    capacity_matrix[target, super_t] = typemax(Int64)
+    @inbounds capacity_matrix[super_s, source] = typemax(Int64)
+    @inbounds capacity_matrix[target, super_t] = typemax(Int64)
 
     S = falses(n)
-    S[[super_s, source]] .= 1
+    @inbounds S[[super_s, source]] .= 1
     T = falses(n)
-    T[[super_t, target]] .= 1
+    @inbounds T[[super_t, target]] .= 1
 
     S_reachable = copy(S)
     T_reachable = copy(T)
@@ -201,7 +201,7 @@ function flowcutter(
                 forward_grow!(S, g, flow_matrix, capacity_matrix)
                 # output source side cut edges
                 for e in edges(g)
-                    if S_reachable[e.src] ⊻ S_reachable[e.dst]
+                    @inbounds if S_reachable[e.src] ⊻ S_reachable[e.dst]
                         push!(cut_arcs, e.src => e.dst)
                     end
                 end
@@ -221,10 +221,10 @@ function flowcutter(
                     true,
                     dist,
                 )
-                S[x] = 1
-                S_reachable[x] = 1
+                @inbounds S[x] = 1
+                @inbounds S_reachable[x] = 1
                 add_edge!(g, super_s, x)
-                capacity_matrix[super_s, x] = typemax(Int64)
+                @inbounds capacity_matrix[super_s, x] = typemax(Int64)
 
                 forward_grow!(S_reachable, g, flow_matrix, capacity_matrix)
             else
@@ -232,7 +232,7 @@ function flowcutter(
                 # output target side cut edges
 
                 for e in edges(g)
-                    if T_reachable[e.src] ⊻ T_reachable[e.dst]
+                    @inbounds if T_reachable[e.src] ⊻ T_reachable[e.dst]
                         push!(cut_arcs, e.src => e.dst)
                     end
                 end
@@ -252,10 +252,10 @@ function flowcutter(
                     false,
                     dist,
                 )
-                T[x] = 1
-                T_reachable[x] = 1
+                @inbounds T[x] = 1
+                @inbounds T_reachable[x] = 1
                 add_edge!(g, x, super_t)
-                capacity_matrix[x, super_t] = typemax(Int64)
+                @inbounds capacity_matrix[x, super_t] = typemax(Int64)
 
                 forward_grow!(
                     T_reachable,

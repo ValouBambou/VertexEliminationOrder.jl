@@ -32,7 +32,7 @@ function separator!(
     local_cuts = [Cut[] for _ = 1:Threads.nthreads()]
     Threads.@threads for i = 1:max_nsample
         s, t = sample(1:n, 2, replace=false)
-        append!(local_cuts[Threads.threadid()], flowcutter(g, s, t))
+        @inbounds append!(local_cuts[Threads.threadid()], flowcutter(g, s, t))
     end
     cuts = collect(Iterators.flatten(local_cuts))
     filter!(c -> c.imbalance < max_imbalance, cuts)
@@ -55,7 +55,7 @@ function separator!(
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
     labels = collect(1:n)
-    for rm_origin_id in sep
+    @inbounds for rm_origin_id in sep
         rm = findfirst(id -> id == rm_origin_id, labels)
         rem_vertex!(g, rm)
         labels[rm] = labels[end]
@@ -64,7 +64,7 @@ function separator!(
     # catch the multiple parts created from the split
     split_parts = connected_components(g)
     # be careful to return indices which make sense in the original root graph
-    return (
+    return  @inbounds (
         map(node -> subgraph_nodes[node], sep),
         map(
             vector -> map(node -> subgraph_nodes[labels[node]], vector),
@@ -107,14 +107,14 @@ function iterative_dissection(
         nedges = ne(graph)
         if nedges == n * (n - 1) / 2
             # @debug "graph is complete"
-            order[(i - n + 1):i] .= subgraph_nodes
+            @inbounds order[(i - n + 1):i] .= subgraph_nodes
             i -= n
             treewidth = max(cell.size - 1, treewidth)
             # @debug "bagsize = $(cell.size) tw = $treewidth"
             continue
         elseif nedges == n - 1
             # @debug "graph is a tree"
-            order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
+            @inbounds order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
             treewidth = max(1, treewidth)
             continue
@@ -126,13 +126,13 @@ function iterative_dissection(
 
         # update order and treewidth
         k = length(sep) 
-        order[(i - k + 1):i] = sep
+        @inbounds order[(i - k + 1):i] = sep
         i -= k
         treewidth = max(k + sum(cell.boundary) - 1, treewidth)
         # @debug "bagsize = $(k + sum(cell.boundary)) tw = $treewidth"
         n = nv(g)
         # add next subgraphs to the queue
-        for new_interior in toqueue
+        @inbounds for new_interior in toqueue
             Ic = falses(n)
             Ic[new_interior] .= true
             Bc = falses(n)
