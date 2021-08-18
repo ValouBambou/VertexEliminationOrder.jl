@@ -1,8 +1,8 @@
 """
-    sample_iterative_dissections(graph, duration)
+    order_tw_by_dissections(graph, duration,nparallel=10)
 Computes an approximation of the upper bound of the treewidth of the graph g and
-an order for elimination using the iterative dissection and the flow cutter algorithm
-several times and select the best_order and treewidth.
+an order for elimination using the iterative dissection (using flow cutter algorithm)
+several times in parallel and select the best_order and treewidth.
 
 
 # Arguments
@@ -15,7 +15,7 @@ several times and select the best_order and treewidth.
 - `treewidth::Int64` the approximation of treewidth.
 
 """
-function sample_iterative_dissections(
+function order_tw_by_dissections(
     graph::SimpleGraph{Int64}, 
     duration::Int64,
     nparallel::Int64 = 10,
@@ -25,7 +25,7 @@ function sample_iterative_dissections(
     best_order = Vector{Int64}()
     start = time()
     while time() - start < duration
-        @debug "start 10 run current tw = $best_tw , time = $(time() - start)"
+        @debug "start $nparallel run current tw = $best_tw , time = $(time() - start)"
         Threads.@threads for i = 1:nparallel
             res = iterative_dissection(graph, best_tw)
             if res[2] < best_tw
