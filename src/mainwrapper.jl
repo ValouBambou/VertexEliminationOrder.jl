@@ -22,19 +22,20 @@ function order_tw_by_dissections(
     graph::SimpleGraph{Int64}, 
     duration::Int64,
     nparallel::Int64 = 2 * Threads.nthreads(),
-    max_imbalance::Float64 = 0.6,
-    max_nsample::Int64 = 20,
+    max_imbalances::Vector{Float64} = [1.0, 0.8, 0.6],
     seed::Int64 = 4242
     )::Pair{Vector{Int64},Int64}
 
     best_tw = typemax(Int64)
     best_order = Vector{Int64}()
     start = time()
+    k = length(max_imbalances)
+    
     while time() - start < duration
         @debug "start $nparallel run current tw = $best_tw , time = $(time() - start)"
         seed += Threads.nthreads()
         Threads.@threads for i = 1:nparallel
-            res = iterative_dissection(graph, best_tw, max_imbalance, max_nsample, seed)
+            res = iterative_dissection(graph, best_tw, max_imbalances[i % k + 1] , 20, seed + i)
             if res[2] < best_tw
                 best_order, best_tw = res
             end

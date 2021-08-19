@@ -24,4 +24,4 @@ end
 @info "average time = $(round(sum(times) / 10; digits=2))"
 
 @info "new wrapper"
-order_tw_by_dissections(g, 30, 10, 1.0, 20, 4242)
+order_tw_by_dissections(g, 30)
