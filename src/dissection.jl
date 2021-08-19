@@ -14,8 +14,9 @@ flowcutter. Parameter max_nsample define the number of call to flowcutter.
 # Arguments
 - `g::SimpleGraph{Int64}`: the subgraph to run flowcutter.
 - `subgraph_nodes::Vector{Int64}`: a table where element at index i is corresponding label in the original root graph.
-- `max_imbalance::Float64 = 0.6` max imbalance to select cut from flowcutter result.
-- `max_nsample::Int64 = 20` max number of try to get a separator.
+- `max_imbalance::Float64` max imbalance to select cut from flowcutter result.
+- `max_nsample::Int64` max number of try to get a separator.
+- `seed::Int64` base seed for RNG choosing input for flowcutter.
 # Return
 - `sep::Vector{Int64}`: the set of indices of the nodes in separator.
 - `split_parts::Array{Array{Int64,1},1}` several parts of the graph resulted from separation.
@@ -23,15 +24,17 @@ flowcutter. Parameter max_nsample define the number of call to flowcutter.
 function separator!(
     g::SimpleGraph{Int64},
     subgraph_nodes::Vector{Int64},
-    max_imbalance::Float64=0.6,
-    max_nsample::Int64=20,
+    max_imbalance::Float64,
+    max_nsample::Int64,
+    seed::Int64,
 )::Tuple{Vector{Int64},Vector{Vector{Int}}}
 
     # run flowcutter many times and collect all of these cuts
     n = length(subgraph_nodes)
     local_cuts = [Cut[] for _ = 1:Threads.nthreads()]
+    rngs = [MersenneTwister(seed + i) for i = 1:Threads.nthreads()]
     Threads.@threads for i = 1:max_nsample
-        s, t = sample(1:n, 2, replace=false)
+        s, t = sample(rngs[Threads.threadid()], 1:n, 2, replace=false)
         @inbounds append!(local_cuts[Threads.threadid()], flowcutter(g, s, t))
     end
     cuts = collect(Iterators.flatten(local_cuts))
@@ -50,7 +53,8 @@ function separator!(
     # select cut with min expansion   
     cuts = [c for c in values(candidates)]  
     cut = cuts[findmin(map(c->c.expansion, cuts))[2]]
-    sep = unique(map(a -> sample([a.first, a.second]), cut.arcs))
+    rng = MersenneTwister(seed)
+    sep = unique(map(a -> sample(rng, [a.first, a.second]), cut.arcs))
     
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
@@ -76,13 +80,17 @@ end
 
 
 """
-    iterative_dissection(g)
+    iterative_dissection(g, best_tw = typemax(Int64), max_imbalance = 0.6, max_nsample = 20, seed = 42,)
 Computes an approximation of the upper bound of the treewidth of the graph g and
 an order for elimination using the iterative dissection and the flow cutter algorithm.
 
 
 # Arguments
 - `g::SimpleGraph{Int64}`: the graph to analyse.
+- `best_tw::Int64 = typemax(Int64)` stop when hitting a tw bigger than this.
+- `max_imbalance::Float64 = 0.6` criteria for selecting cuts that will build the separator.
+- `max_nsample::Int64 = 20` the number of calls to flowcutter with random inputs.
+- `seed::Int64 = 4242` the base seed for the RNG sampling the inputs of flowcutter and the choosen one cut for separator.
 
 # Return
 - `order::Vector{Int64}` an array of vertices index.
@@ -90,7 +98,10 @@ an order for elimination using the iterative dissection and the flow cutter algo
 """
 function iterative_dissection(
         g::SimpleGraph{Int64}, 
-        best_tw::Int64 = typemax(Int64)
+        best_tw::Int64 = typemax(Int64),
+        max_imbalance::Float64 = 0.6,
+        max_nsample::Int64 = 20,
+        seed::Int64 = 42,
     )::Pair{Vector{Int64}, Int64}
     n = nv(g)
     order = zeros(Int64, n)
@@ -135,7 +146,7 @@ function iterative_dissection(
         end
         
         # compute separator and cut graph in several parts (graph and indices)
-        sep, toqueue = separator!(graph, subgraph_nodes)
+        sep, toqueue = separator!(graph, subgraph_nodes, max_imbalance, max_nsample, seed)
         # @debug "sep = $sep"
 
         # update order and treewidth
