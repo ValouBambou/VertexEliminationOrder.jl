@@ -23,5 +23,5 @@ for i in 1:10
 end
 @info "average time = $(round(sum(times) / 10; digits=2))"
 
-@info "new wrapper"
-order_tw_by_dissections(g, 30)
+@info "new wrapper single threaded"
+order_tw_by_dissections_simple(g, 30)
