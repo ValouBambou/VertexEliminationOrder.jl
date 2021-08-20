@@ -201,7 +201,10 @@ function flowcutter(
                 forward_grow!(S, g, flow_matrix, capacity_matrix)
                 # output source side cut edges
                 for e in edges(g)
-                    @inbounds if S_reachable[e.src] ⊻ S_reachable[e.dst]
+                    # keep arcs such as in u => v u is always from the larger side of the cut
+                    @inbounds if S_reachable[e.src] && (!S_reachable[e.dst])
+                        push!(cut_arcs, e.dst => e.src)
+                    elseif (!S_reachable[e.src]) && S_reachable[e.dst]
                         push!(cut_arcs, e.src => e.dst)
                     end
                 end
@@ -232,7 +235,10 @@ function flowcutter(
                 # output target side cut edges
 
                 for e in edges(g)
-                    @inbounds if T_reachable[e.src] ⊻ T_reachable[e.dst]
+                    # keep arcs such as in u => v u is always from the larger side of the cut
+                    @inbounds if T_reachable[e.src] && (!T_reachable[e.dst])
+                        push!(cut_arcs, e.dst => e.src)
+                    elseif (!T_reachable[e.src]) && T_reachable[e.dst]
                         push!(cut_arcs, e.src => e.dst)
                     end
                 end

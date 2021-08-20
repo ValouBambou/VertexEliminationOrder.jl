@@ -51,10 +51,10 @@ function separator!(
     end
 
     # select cut with min expansion   
-    cuts = [c for c in values(candidates)]  
+    cuts = [c for c in values(candidates)]
     cut = cuts[findmin(map(c->c.expansion, cuts))[2]]
-    rng = MersenneTwister(seed)
-    sep = unique(map(a -> sample(rng, [a.first, a.second]), cut.arcs))
+    # select the nodes from the larger side of the cut
+    sep = unique(map(a -> a.first, cut.arcs))
     
     # split the subgraph in several parts
     # be careful with index while removing vertices from sep
