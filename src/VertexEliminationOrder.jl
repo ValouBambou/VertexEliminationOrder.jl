@@ -16,7 +16,7 @@ export augment_flow!, forward_grow!, piercing_node, flowcutter!
 include("dissection.jl")
 export iterative_dissection
 include("mainwrapper.jl")
-export order_tw_by_dissections
+export order_tw_by_dissections_simple, order_tw_by_dissections_threads
 
 
 end
