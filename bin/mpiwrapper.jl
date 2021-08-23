@@ -1,5 +1,5 @@
-ENV["JULIA_MPI_BINARY"]="system"
 using MPI 
+ENV["JULIA_MPI_BINARY"]="system"
 using VertexEliminationOrder
 
 graph_name = "sycamore_53_20.gr"
@@ -12,7 +12,7 @@ root = 0
 print("rank $my_rank has $(Threads.nthreads()) threads \n")
 
 g = graph_from_gr(joinpath(@__DIR__, "../test/example_graphs/", graph_name))
-order, tw = order_tw_by_dissections_simple(g, duration)
+order, tw = order_tw_by_dissections_simple(g, duration; seed= 42 + my_rank)
 MPI.Barrier(comm)
 
 """returns the better (rank, treewidth) pair"""
@@ -37,6 +37,6 @@ end
 MPI.Barrier(comm)
 
 if my_rank == root
-    @show "best treewidth = $best_tw"
+    @show best_tw
     @show best_order
 end
