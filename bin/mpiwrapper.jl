@@ -2,7 +2,7 @@ ENV["JULIA_MPI_BINARY"]="system"
 using MPI 
 using VertexEliminationOrder
 
-graph_name = "sycamore_53_8_0.gr"
+graph_name = "sycamore_53_20.gr"
 duration = 30
 
 MPI.Init()
