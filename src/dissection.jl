@@ -114,7 +114,6 @@ function iterative_dissection(
         subgraph_nodes = findall(it -> it > 0, cell.interior)
         n = length(subgraph_nodes)
         if cell.size == treewidth + 1
-            # @debug "stop criteria triggered"
             while !isempty(q)
                 @inbounds order[(i - n + 1):i] .= subgraph_nodes
                 i -= n
@@ -131,23 +130,20 @@ function iterative_dissection(
         
         nedges = ne(graph)
         if nedges == n * (n - 1) / 2
-            # @debug "graph is complete"
             @inbounds order[(i - n + 1):i] .= subgraph_nodes
             i -= n
             treewidth = max(cell.size - 1, treewidth)
             # @debug "bagsize = $(cell.size) tw = $treewidth"
             continue
         elseif nedges == n - 1
-            # @debug "graph is a tree"
             @inbounds order[(i - n + 1):i] .= tree_order!(graph, subgraph_nodes)
             i -= n
-            treewidth = max(1, treewidth)
+            treewidth = max(1 + sum(cell.boundary), treewidth)
             continue
         end
         
         # compute separator and cut graph in several parts (graph and indices)
         sep, toqueue = separator!(graph, subgraph_nodes, max_imbalance, nsample, seed)
-        # @debug "sep = $sep"
 
         # update order and treewidth
         k = length(sep) 
