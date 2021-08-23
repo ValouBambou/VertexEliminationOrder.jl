@@ -1,36 +1,27 @@
 using LightGraphs
-using VertexEliminationOrder
 using Test
+using Pkg
 
+Pkg.activate(".")
+using VertexEliminationOrder
 
-"""
-    graph_from_gr(filename::String)
-
-Read a graph from the provided gr file.
-"""
-function graph_from_gr(filename::String)
-    lines = readlines(filename)
-
-    # Create a Graph with the correct number of vertices.
-    num_vertices, num_edges = parse.(Int, split(lines[1], ' ')[3:end])
-    G = SimpleGraph(num_vertices)
-
-    # Add an edge to the graph for every other line in the file.
-    for line in lines[2:end]
-        src, dst = parse.(Int, split(line, ' '))
-        add_edge!(G, src, dst)
-    end
-
-    G
-end
 
 # The file to read the graph from.
 graph_file = "test/example_graphs/sycamore_53_20.gr"
 
 ENV["JULIA_DEBUG"]=VertexEliminationOrder
-
+g = smallgraph("house")
+iterative_dissection(g)
 
 g = graph_from_gr(graph_file)
-res = iterative_dissection!(g)
-@test res[1] == unique(res[1])
-@test res[2] == 57
+times = Vector{Float64}()
+for i in 1:10
+    tic = time()
+    @info "timing main algorithm iterative_dissection"
+    iterative_dissection(g)
+    push!(times, time() - tic)
+end
+@info "average time = $(round(sum(times) / 10; digits=2))"
+
+@info "new wrapper single threaded"
+order_tw_by_dissections_simple(g, 30)

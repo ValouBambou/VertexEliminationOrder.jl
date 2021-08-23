@@ -90,3 +90,54 @@ function tree_order!(graph::SimpleGraph{Int64}, nodes::Vector{Int64})::Vector{In
     end
     return order
 end
+
+"""
+    graph_from_gr(filename::String)
+
+Read a graph from the provided gr file.
+"""
+function graph_from_gr(filename::String)::SimpleGraph{Int64}
+    lines = readlines(filename)
+
+    # Create a Graph with the correct number of vertices.
+    num_vertices, num_edges = parse.(Int, split(lines[1], ' ')[3:end])
+    G = SimpleGraph(num_vertices)
+
+    # Add an edge to the graph for every other line in the file.
+    for line in lines[2:end]
+        src, dst = parse.(Int, split(line, ' '))
+        add_edge!(G, src, dst)
+    end
+
+    G
+end
+
+"""
+    square_lattice_graph(n::Int64)
+Return a square lattice graph of dimension n. The dimension means
+a big square made of n x n squares so (n+1)² nodes in total.
+
+# Example
+
+n = 2 give a graph like this:
+    1 ---- 2 ---- 3
+    |      |      |
+    4 ---- 5 ---- 6
+    |      |      |
+    7 ---- 8 ---- 9
+
+"""
+function square_lattice_graph(n::Int64)::SimpleGraph{Int64}
+    nrow = (n + 1)
+    nvertices =  nrow * nrow
+    g = SimpleGraph{Int64}(nvertices)
+    for i in 1:nvertices
+        if i % nrow != 0
+            add_edge!(g, i, i + 1)
+        end
+        if trunc(i / nrow) < nrow - 1
+            add_edge!(g, i, i + nrow)
+        end
+    end
+    return g
+end
