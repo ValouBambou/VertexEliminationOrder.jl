@@ -58,6 +58,7 @@ several times and select the best_order and treewidth.
 - `max_imbalance::Float64 = 0.6` criteria for selecting cuts that will build the separator.
 - `seed::Int64 = 4242` the base seed for the RNG sampling the inputs of flowcutter and the choosen one cut for separator.
 - `nsample::Int64 = 20` the number of calls to flowcutter with random inputs.
+- `sample_augment::Int64 = 8` the number of iteration required before augmenting nsample.
 
 # Return
 - `order::Vector{Int64}` an array of vertices index.
