@@ -1,28 +1,61 @@
 using MPI 
 ENV["JULIA_MPI_BINARY"]="system"
 using VertexEliminationOrder
+using ArgParse
 
-graph_name = "sycamore_53_20.gr"
-duration = 30
-max_imbalances = [1.0, 0.8, 0.6]
-base_seed = 42
-seed_diff = 1000
-base_nsample=20
-sample_augment=8
 
-i = 1
-n = length(ARGS)
-while i <= n
-	global i, graph_name, duration, base_seed, base_nsample, sample_augment, seed_diff, max_imbalances
-	if ARGS[i] =="--duration" duration = parse(Int64, ARGS[i+1]) end
-	if ARGS[i] =="--graph" graph_name = ARGS[i+1] end
-    if ARGS[i] =="--seed" base_seed = parse(Int64, ARGS[i+1]) end
-	if ARGS[i] =="--seeddiff" seed_diff = parse(Int64, ARGS[i+1]) end
-    if ARGS[i] =="--nsample" base_nsample = parse(Int64, ARGS[i+1]) end
-    if ARGS[i] =="--nsampleplus" sample_augment = parse(Int64, ARGS[i+1]) end
-    if ARGS[i] =="--imbalances" max_imbalances = [parse(Float64, ss) for ss in split(ARGS[i+1], ",")] end
-    i += 1
+function parse_commandline(ARGS)
+    s = ArgParseSettings()
+    @add_arg_table! s begin
+        "--seed"
+            help = "Base seed to use for sampling flow-cutter inputs."
+            default = 42
+            arg_type = Int64
+        "--seed_bound"
+            help = "Minimum difference of seed between MPI processes."
+            default = 1000
+            arg_type = Int64
+        "--time"
+            help = "The number of seconds to run flow cutter for."
+            default = 30
+            arg_type = Int64
+        "--graph"
+            help = "The name of the graph file .gr to open."
+            default = "sycamore_53_20.gr"
+            arg_type = String
+        "--dir_graphfiles"
+            help = "Path to your graph files .gr to read them."
+            default = "$(@__DIR__)/../test/example_graphs/"
+            arg_type = String
+        "--nsample"
+            help = "The number of sample of flow cutter random inputs per execution."
+            default = 20
+            arg_type = Int64
+            
+        "--sample_augment"
+            help = "The number of execution needed before increasing nsample."
+            default = 8
+            arg_type = Int64
+        "--max_imbalances"
+            nargs ='*'
+            help = "The max imabalances to select best cut from flow-cutter."
+            default = [1.0, 0.8, 0.6]
+            arg_type = Float64
+    end
+
+    return parse_args(ARGS, s)
 end
+
+parsed_args = parse_commandline(ARGS)
+
+graph_name = parsed_args["graph"]
+dirgraphfiles = parsed_args["dir_graphfiles"]
+duration = parsed_args["time"]
+max_imbalances = parsed_args["max_imbalances"]
+base_seed = parsed_args["seed"]
+seed_diff = parsed_args["seed_bound"]
+base_nsample = parsed_args["nsample"]
+sample_augment = parsed_args["sample_augment"]
 
 println("- - - args - - -")
 println("duration = $duration")
@@ -40,7 +73,7 @@ my_rank = MPI.Comm_rank(comm)
 root = 0
 print("rank $my_rank has $(Threads.nthreads()) threads \n")
 
-g = graph_from_gr(joinpath(@__DIR__, "../test/example_graphs/", graph_name))
+g = graph_from_gr(joinpath(dirgraphfiles, graph_name))
 order, tw = order_tw_by_dissections_simple(
     g, 
     duration; 
