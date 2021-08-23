@@ -11,7 +11,7 @@ my_rank = MPI.Comm_rank(comm)
 root = 0
 print("rank $my_rank has $(Threads.nthreads()) threads \n")
 
-g = graph_from_gr(joinpath(@__DIR__, graph_name))
+g = graph_from_gr(joinpath(@__DIR__, "../test/example_graphs/", graph_name))
 order, tw = order_tw_by_dissections_simple(g, duration)
 MPI.Barrier(comm)
 
