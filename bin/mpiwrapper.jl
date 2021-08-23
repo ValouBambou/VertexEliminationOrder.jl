@@ -12,7 +12,7 @@ root = 0
 print("rank $my_rank has $(Threads.nthreads()) threads \n")
 
 g = graph_from_gr(joinpath(@__DIR__, "../test/example_graphs/", graph_name))
-order, tw = order_tw_by_dissections_simple(g, duration, [1.0, 0.8, 0.6], 42 + my_rank)
+order, tw = order_tw_by_dissections_simple(g, duration, [1.0, 0.8, 0.6], 42 + my_rank * 1000)
 MPI.Barrier(comm)
 
 """returns the better (rank, treewidth) pair"""
