@@ -8,8 +8,8 @@ using SparseArrays
 G = smallgraph("house")
 n = nv(G)
 cap = SparseMatrixCSC{Int64, Int64}(adjacency_matrix(G))
-flow = zeros(Int64, n, n)
-expected_flow = zeros(Int64, n, n)
+flow = spzeros(Int64, n, n)
+expected_flow = spzeros(Int64, n, n)
 expected_flow[5, 4] = 1
 expected_flow[4, 5] = -1
 expected_flow[4, 2] = 1
@@ -53,7 +53,7 @@ cut = [4=>2, 4=>3, 5=>3]
 SR=falses(5); SR[[4, 5]] .= true
 TR=falses(5); SR[[1, 3]] .= true
 @info "Testing piercing_node with house graph"
-@test piercing_node(cut, SR, TR, 5, 1, dist) == 2
+@test piercing_node(cut, SR, TR, true, dist) == 2
 
 #test flowcutter
 @info flowcutter(G, 5, 1)
