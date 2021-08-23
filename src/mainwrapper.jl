@@ -79,8 +79,8 @@ function order_tw_by_dissections_simple(
     
     while time() - start < duration
         @debug "time = $(round(time() - start; digits=2))"
-        @debug "start new run with seed = $seed , current tw = $best_tw , max_imbalance = $(max_imbalances[i % k + 1]), nsample = $(20 + 20*(i%8))"
-        res = iterative_dissection(graph, best_tw, max_imbalances[i % k + 1] , 20 + 20*(i%8), seed)
+        @debug "start new run with seed = $seed , current tw = $best_tw , max_imbalance = $(max_imbalances[i % k + 1]), nsample = $(20 + 20*(i÷8))"
+        res = iterative_dissection(graph, best_tw, max_imbalances[i % k + 1] , 20 + 20*(i ÷ 8), seed)
         if res[2] < best_tw
             best_order, best_tw = res
         end
