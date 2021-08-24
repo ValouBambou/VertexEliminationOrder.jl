@@ -14,14 +14,19 @@ g = smallgraph("house")
 iterative_dissection(g)
 
 g = graph_from_gr(graph_file)
+n = 20
 times = Vector{Float64}()
-for i in 1:10
+@info "timing main algorithm iterative_dissection with $(Threads.nthreads()) threads"
+for i in 1:n
     tic = time()
-    @info "timing main algorithm iterative_dissection"
     iterative_dissection(g)
     push!(times, time() - tic)
 end
-@info "average time = $(round(sum(times) / 10; digits=2))"
+avg_time = sum(times) / n
+@info "average time = $(avg_time)"
 
-@info "new wrapper single threaded"
-order_tw_by_dissections_simple(g, 30)
+using DelimitedFiles
+
+open("dissection_time_threads.txt", "w") do io
+    writedlm(io, [Threads.nthreads(), avg_time])
+end
