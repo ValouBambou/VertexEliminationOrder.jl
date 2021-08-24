@@ -27,6 +27,6 @@ avg_time = sum(times) / n
 
 using DelimitedFiles
 
-open("dissection_time_threads.txt", "w") do io
+open("dissection_time_threads.txt", "a") do io
     writedlm(io, [Threads.nthreads(), avg_time])
 end
