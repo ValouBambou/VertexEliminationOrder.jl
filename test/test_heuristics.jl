@@ -1,6 +1,6 @@
 using VertexEliminationOrder
 using Test
-using LightGraphs
+using Graphs
 
 G = smallgraph("house")
 @info "Testing minwidth with house graph"

@@ -1,6 +1,6 @@
 using VertexEliminationOrder
 using Test
-using LightGraphs
+using Graphs
 using SparseArrays
 
 
