@@ -1,5 +1,5 @@
 using VertexEliminationOrder
-using LightGraphs
+using Graphs
 using Test
 using Random
 

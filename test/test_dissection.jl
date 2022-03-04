@@ -1,6 +1,6 @@
 using VertexEliminationOrder
 using Test
-using LightGraphs
+using Graphs
 
 ENV["JULIA_DEBUG"]=VertexEliminationOrder
 

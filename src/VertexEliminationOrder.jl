@@ -1,6 +1,6 @@
 module VertexEliminationOrder
 
-using LightGraphs
+using Graphs
 using DataStructures
 using StatsBase
 using Parameters
